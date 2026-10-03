@@ -1,0 +1,18 @@
+# EN: Render Blueprint for the public demo (free plan). See start.sh for the daily reset.
+# PT: Blueprint do Render para a demonstração pública (plano grátis). O reset diário está no start.sh.
+services:
+  - type: web
+    name: supplyflow
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: DEMO_MODE
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SUPPORT_WHATSAPP
+        value: "11991925421"

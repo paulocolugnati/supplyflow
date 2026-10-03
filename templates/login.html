@@ -11,6 +11,21 @@
     <h1 class="titulo-pagina">{{ t("login.title") }}</h1>
     <p class="subtitulo">{{ t("login.subtitle") }}</p>
 
+    {# EN: Public demo: the accounts to try | PT: Demonstração pública: as contas para testar #}
+    {% if demo_mode %}
+        <div class="aviso aviso-sucesso">
+            <div>
+                <p><strong>{{ t("demo.title") }}</strong> · {{ t("demo.text") }}</p>
+                <ul>
+                    <li>{{ t("demo.owner") }}: <code>dono@demo.com</code></li>
+                    <li>{{ t("demo.manager") }}: <code>gerente@demo.com</code></li>
+                    <li>{{ t("demo.seller") }}: <code>vendedor@demo.com</code></li>
+                    <li>{{ t("demo.buyer") }}: <code>comprador@demo.com</code></li>
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
     {% if error %}
         <div class="aviso aviso-erro" role="alert">{{ icon("alerta", 18) }}<p>{{ t(error) }}</p></div>
     {% endif %}
@@ -33,5 +48,7 @@
         <button class="botao botao-faixa botao-largo" type="submit">{{ t("login.submit") }}</button>
     </form>
 
-    <p class="acesso-rodape">{{ t("login.no_account") }} <a href="/register">{{ t("nav.register") }}</a></p>
+    {% if not demo_mode %}
+        <p class="acesso-rodape">{{ t("login.no_account") }} <a href="/register">{{ t("nav.register") }}</a></p>
+    {% endif %}
 {% endblock %}

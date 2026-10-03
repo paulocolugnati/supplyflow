@@ -1,0 +1,3 @@
+# EN: shell scripts must keep Linux line endings (the demo server runs start.sh)
+# PT: scripts de shell precisam manter as quebras de linha do Linux (o servidor roda o start.sh)
+*.sh text eol=lf

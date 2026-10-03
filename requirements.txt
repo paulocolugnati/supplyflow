@@ -6,3 +6,5 @@
 #     Instalar dentro de project/:  pip install -r requirements.txt
 cs50>=9.3,<10
 Flask>=3.0,<4
+# EN: production server for the public demo (Render, Linux) | PT: servidor de produção da demo pública (Render, Linux)
+gunicorn>=22,<24

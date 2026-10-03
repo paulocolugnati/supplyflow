@@ -52,6 +52,12 @@ def load_secret_key():
 # EN: Sessions: signed cookie, unreadable by JavaScript, not sent by cross-site forms
 # PT: Sessão: cookie assinado, que o JavaScript não lê e que formulários de outros sites não enviam
 app.config["SECRET_KEY"] = load_secret_key()
+
+# EN: Public demo mode (DEMO_MODE=1 on the server): sign-up is closed and the login page
+#     lists the demo accounts. The demo data is rebuilt every day by start.sh.
+# PT: Modo demonstração pública (DEMO_MODE=1 no servidor): o cadastro fica fechado e a
+#     página de login mostra as contas de demonstração. O start.sh recria os dados todo dia.
+DEMO_MODE = os.environ.get("DEMO_MODE") == "1"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -165,6 +171,7 @@ def inject_helpers():
         "t": lambda key: translate(key, lang),
         "lang": lang,
         "languages": LANGUAGES,
+        "demo_mode": DEMO_MODE,
         "csrf_token": csrf_token,
         "current_user": user,
         "membership": g.get("membership"),
@@ -426,6 +433,8 @@ def register():
     """
     if g.user:
         return redirect(home_url())
+    if DEMO_MODE:
+        return redirect("/login")
 
     # EN: An invite token may come in the URL (GET) or in a hidden field (POST)
     # PT: O token do convite pode vir na URL (GET) ou num campo escondido (POST)
