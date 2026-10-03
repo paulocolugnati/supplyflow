@@ -1,0 +1,354 @@
+{#
+    EN: Public landing page ("Piso do Galpão" world). A standalone document: it does not
+        extend layout.html, because the logged-in app still uses Bootstrap until its redesign.
+        Scroll effects come from static/fx (sites-incriveis engine, never edited); the
+        signature behavior (address rail, margin lock, mechanical counter) lives in
+        static/landing.js.
+    PT: Página inicial pública (mundo "Piso do Galpão"). É um documento independente: não
+        herda do layout.html, porque o sistema logado ainda usa Bootstrap até o redesign dele.
+        Os efeitos de rolagem vêm de static/fx (motor sites-incriveis, nunca editado); o
+        comportamento próprio (trilho de endereços, trava da margem, contador mecânico)
+        fica em static/landing.js.
+#}
+<!DOCTYPE html>
+<html data-theme="{{ theme }}" lang="{{ 'pt-BR' if lang == 'pt' else 'en' }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="{{ t('landing.meta_description') }}" name="description">
+    <meta content="#0B2A33" name="theme-color">
+    <title>SupplyFlow — {{ t("landing.title_tag") }}</title>
+
+    <link href="/static/brand/simbolo.svg" rel="icon" type="image/svg+xml">
+    <link as="font" crossorigin href="/static/fonts/archivo-latin.woff2" rel="preload" type="font/woff2">
+    <link href="/static/fx/sites-incriveis.css" rel="stylesheet">
+    <link href="/static/sf-base.css" rel="stylesheet">
+    <link href="/static/landing.css" rel="stylesheet">
+    <script defer src="/static/fx/sites-incriveis.js"></script>
+    <script defer src="/static/sf.js"></script>
+    <script defer src="/static/landing.js"></script>
+</head>
+
+<body>
+
+    <a class="pular" href="#conteudo">{{ t("landing.skip") }}</a>
+
+    {# EN: Top bar | PT: Barra do topo #}
+    <header class="topo">
+        <a aria-label="SupplyFlow" class="topo-marca" href="/">{% include "partials/logo.svg" %}</a>
+
+        <nav aria-label="{{ t('landing.nav_label') }}" class="topo-nav">
+            <a href="#trava">{{ t("landing.nav_how") }}</a>
+            <a href="#recompra">{{ t("landing.nav_reorder") }}</a>
+            <a href="#planos">{{ t("landing.nav_plans") }}</a>
+        </nav>
+
+        <div class="topo-acoes">
+            <a class="topo-idioma" href="/lang/{{ 'en' if lang == 'pt' else 'pt' }}?next=/" hreflang="{{ 'en' if lang == 'pt' else 'pt-BR' }}">{{ "EN" if lang == "pt" else "PT" }}</a>
+            {# EN: Theme switch; the server reads the "theme" cookie so the first paint is right
+               PT: Troca de tema; o servidor lê o cookie "theme" para a primeira pintura já vir certa #}
+            <button aria-label="{{ t('landing.theme_toggle') }}" aria-pressed="{{ 'true' if theme == 'light' else 'false' }}" class="topo-tema" data-tema-botao type="button">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>
+            </button>
+            <a class="topo-entrar" href="/login">{{ t("nav.login") }}</a>
+            <a class="botao botao-faixa botao-pequeno" href="/register?type=distributor">{{ t("landing.cta") }}</a>
+        </div>
+    </header>
+
+    {# EN: Address rail: the page's floor lane. Each scene has a rack address; the pointer
+           follows the scroll. Real links, so it also works as navigation.
+       PT: Trilho de endereços: a faixa de piso da página. Cada cena tem um endereço de
+           porta-palete; o ponteiro acompanha a rolagem. São links reais, então também navega. #}
+    <nav aria-label="{{ t('landing.rail_label') }}" class="trilho">
+        <div aria-hidden="true" class="trilho-faixa"><span class="trilho-ponteiro"></span></div>
+        <ol>
+            {% for code, anchor, key in [
+                ("D01", "entrada", "landing.rail_1"), ("D02", "problema", "landing.rail_2"),
+                ("D03", "trava", "landing.rail_3"), ("D04", "recompra", "landing.rail_4"),
+                ("D05", "equipe", "landing.rail_5"), ("D06", "planos", "landing.rail_6"),
+                ("D07", "duvidas", "landing.rail_faq"), ("D08", "saida", "landing.rail_7")
+            ] %}
+                <li><a data-endereco="{{ anchor }}" href="#{{ anchor }}"><span class="trilho-codigo">{{ code }}</span><span class="trilho-nome">{{ t(key) }}</span></a></li>
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <main id="conteudo">
+
+        {# ===== D01 — EN: Entrance | PT: Entrada ===== #}
+        <section class="cena cena-entrada" id="entrada">
+            <div class="entrada-texto">
+                {# EN: Two lines that rise one after the other (each line is its own element,
+                       so the line break survives the animation)
+                   PT: Duas linhas que sobem uma depois da outra (cada linha é um elemento,
+                       então a quebra de linha sobrevive à animação) #}
+                <h1 class="titulo-mestre">
+                    <span class="linha" data-fx="subir">{{ t("landing.hero_line1") }}</span>
+                    <span class="linha" data-fx="subir" data-fx-atraso="180">{{ t("landing.hero_line2") }}</span>
+                </h1>
+                <p class="apoio" data-fx="surgir" data-fx-atraso="500">{{ t("landing.hero_support") }}</p>
+                <div class="acoes" data-fx="surgir" data-fx-atraso="700">
+                    <a class="botao botao-faixa" href="/register?type=distributor">{{ t("landing.cta") }}</a>
+                    <a class="link-faixa" href="#trava">{{ t("landing.hero_secondary") }}</a>
+                </div>
+            </div>
+
+            {# EN: The discount ruler enters from the right with both stops already hatched
+               PT: A régua de desconto entra pela direita com os dois batentes já hachurados #}
+            <figure aria-label="{{ t('landing.ruler_label') }}" class="regua regua-entrada" data-fx="direita" data-fx-atraso="900">
+                <div aria-hidden="true" class="regua-corpo">
+                    <span class="regua-zona zona-gerente"></span>
+                    <span class="regua-zona zona-dono"></span>
+                    <span class="regua-batente batente-5"></span>
+                    <span class="regua-batente batente-15"></span>
+                </div>
+                <figcaption class="regua-legenda">
+                    <span class="legenda-5">{{ t("landing.stop_seller") }} <b>5%</b></span>
+                    <span class="legenda-15">{{ t("landing.stop_manager") }} <b>15%</b></span>
+                </figcaption>
+            </figure>
+        </section>
+
+        {# ===== D02 — EN: The problem | PT: O problema ===== #}
+        <section class="cena cena-problema" data-fx-fundo="var(--piso-2)" data-fx-tinta="var(--tinta)" id="problema">
+            <div class="problema-texto">
+                <h2 class="titulo" data-fx="subir">{{ t("landing.problem_title") }}</h2>
+                <p class="apoio" data-fx="subir" data-fx-atraso="150">{{ t("landing.problem_text") }}</p>
+            </div>
+
+            {# EN: Loose fragments of a normal day, deliberately out of alignment
+               PT: Fragmentos soltos de um dia comum, desalinhados de propósito #}
+            <div aria-label="{{ t('landing.problem_fragments') }}" class="entulho" role="list">
+                <p class="caco caco-balao caco-1" data-fx="esquerda" data-fx-mouse="10" role="listitem">{{ t("landing.chat_1") }}</p>
+                <p class="caco caco-balao caco-resposta caco-2" data-fx="direita" data-fx-atraso="120" data-fx-mouse="16" role="listitem">{{ t("landing.chat_2") }}</p>
+                <p class="caco caco-arquivo caco-3" data-fx="crescer" data-fx-atraso="240" data-fx-mouse="8" role="listitem">precos_diego_v3_FINAL.xlsx</p>
+                <p class="caco caco-balao caco-4" data-fx="esquerda" data-fx-atraso="360" data-fx-mouse="20" role="listitem">{{ t("landing.chat_3") }}</p>
+                <p class="caco caco-bilhete caco-5" data-fx="direita" data-fx-atraso="480" data-fx-mouse="12" role="listitem">{{ t("landing.chat_4") }}</p>
+            </div>
+
+            <p class="problema-fecho" data-fx="subir">{{ t("landing.problem_close") }}</p>
+        </section>
+
+        {# ===== D03 — EN: PEAK, the margin lock (pinned scene, driven by landing.js)
+                     PT: PICO, a trava da margem (cena presa, controlada pelo landing.js) ===== #}
+        <section class="cena-trava" data-fx-altura="6" data-fx-fixa data-fx-fundo="var(--piso)" data-fx-tinta="var(--tinta)" data-passo="1" id="trava">
+            <div class="fx-palco">
+                <div class="trava-grade">
+
+                    <div class="trava-narracao">
+                        <h2 class="titulo">{{ t("landing.lock_title") }}</h2>
+                        <ol class="passos">
+                            {% for n in range(1, 6) %}
+                                <li data-passo-item="{{ n }}">{{ t("landing.lock_step_" ~ n) }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+
+                    {# EN: Example quote (fictional data, labeled) | PT: Orçamento de exemplo (dados fictícios, com etiqueta) #}
+                    <article aria-label="{{ t('landing.quote_label') }}" class="orcamento">
+                        <header class="orcamento-topo">
+                            <span class="orcamento-numero">#0042</span>
+                            <span class="orcamento-cliente">Restaurante do Zé</span>
+                            <span class="etiqueta-exemplo">{{ t("landing.example") }}</span>
+                        </header>
+                        <table class="orcamento-itens">
+                            <thead>
+                                <tr><th scope="col">{{ t("landing.col_item") }}</th><th scope="col">{{ t("landing.col_qty") }}</th><th scope="col">{{ t("landing.col_price") }}</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>{{ t("landing.item_rice") }}</td><td>10 cx</td><td>{{ 10000 | brl }}</td></tr>
+                                <tr><td>{{ t("landing.item_oil") }}</td><td>8 cx</td><td>{{ 5000 | brl }}</td></tr>
+                                <tr><td>{{ t("landing.item_beans") }}</td><td>5 fd</td><td>{{ 8000 | brl }}</td></tr>
+                            </tbody>
+                        </table>
+                        <dl class="orcamento-totais">
+                            <div><dt>{{ t("landing.total_discount") }}</dt><dd><span class="contador" data-contador="desconto">0,00%</span></dd></div>
+                            <div><dt>{{ t("landing.total_margin") }}</dt><dd><span class="contador" data-contador="margem">23,56%</span></dd></div>
+                            <div class="total-final"><dt>{{ t("landing.total_final") }}</dt><dd><span class="contador" data-contador="total">{{ 180000 | brl }}</span></dd></div>
+                        </dl>
+                        {# EN: State shown as line form + text, never color alone
+                           PT: Estado mostrado como forma de linha + texto, nunca só cor #}
+                        <p class="estado" data-estado="rascunho">
+                            <span aria-hidden="true" class="estado-linha"></span>
+                            <span class="estado-texto" data-estado-texto
+                                  data-txt-aceito="{{ t('landing.state_accepted') }}"
+                                  data-txt-aguardando="{{ t('landing.state_waiting') }}"
+                                  data-txt-aprovado="{{ t('landing.state_approved') }}"
+                                  data-txt-caiu="{{ t('landing.state_voided') }}"
+                                  data-txt-enviado="{{ t('landing.state_sent') }}"
+                                  data-txt-rascunho="{{ t('landing.state_draft') }}">{{ t("landing.state_draft") }}</span>
+                        </p>
+                    </article>
+
+                    <figure aria-label="{{ t('landing.ruler_label') }}" class="regua regua-trava">
+                        <div aria-hidden="true" class="regua-corpo">
+                            <span class="regua-zona zona-gerente"></span>
+                            <span class="regua-zona zona-dono"></span>
+                            <span class="regua-batente batente-5"></span>
+                            <span class="regua-batente batente-15"></span>
+                            <span class="regua-ponteiro"><span class="contador" data-contador="ponteiro">0,00%</span></span>
+                        </div>
+                        <figcaption class="regua-legenda">
+                            <span class="legenda-5">{{ t("landing.stop_seller") }} <b>5%</b></span>
+                            <span class="legenda-15">{{ t("landing.stop_manager") }} <b>15%</b></span>
+                        </figcaption>
+                    </figure>
+
+                </div>
+            </div>
+        </section>
+
+        {# ===== D04 — EN: Reorder alert | PT: Alerta de recompra ===== #}
+        <section class="cena cena-recompra" data-fx-fundo="var(--piso)" data-fx-tinta="var(--tinta)" id="recompra">
+            <div class="recompra-texto">
+                <h2 class="titulo">{{ t("landing.reorder_title") }}</h2>
+                <p class="apoio">{{ t("landing.reorder_text") }}</p>
+            </div>
+
+            <figure aria-label="{{ t('landing.reorder_figure') }}" class="pedidos" data-pedidos>
+                <div aria-hidden="true" class="pedidos-faixa"></div>
+                <ol class="pedidos-lista">
+                    {% for day in ["01/09", "08/09", "15/09", "22/09"] %}
+                        <li class="pedido"><span class="pedido-marca"></span><span class="pedido-data">{{ day }}</span><span class="pedido-rotulo">{{ t("landing.order_accepted") }}</span></li>
+                    {% endfor %}
+                    <li class="pedido pedido-silencio"><span class="pedido-rotulo">{{ t("landing.order_silence") }}</span></li>
+                    <li class="pedido pedido-alerta">
+                        <span class="pedido-marca"></span>
+                        <span class="pedido-data">03/10</span>
+                        <span class="alerta">
+                            <strong>Restaurante do Zé</strong>
+                            <span>{{ t("landing.reorder_alert") }}</span>
+                            <span class="etiqueta-exemplo">{{ t("landing.example") }}</span>
+                        </span>
+                    </li>
+                </ol>
+                <figcaption class="pedidos-regra">{{ t("landing.reorder_rule") }}</figcaption>
+            </figure>
+        </section>
+
+        {# ===== D05 — EN: The whole team | PT: A equipe inteira ===== #}
+        <section class="cena cena-equipe" id="equipe">
+            <h2 class="titulo">{{ t("landing.team_title") }}</h2>
+            <ul class="porta-paletes">
+                {% for role in ["owner", "admin", "member", "buyer"] %}
+                    <li class="baia-papel">
+                        <span class="etiqueta-endereco">{{ t("landing.role_" ~ role) }}</span>
+                        <p>{{ t("landing.role_" ~ role ~ "_text") }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        {# ===== D06 — EN: Plans (real prices and limits from the database)
+                     PT: Planos (preços e limites reais, vindos do banco) ===== #}
+        <section class="cena cena-planos" id="planos">
+            <div class="planos-texto">
+                <h2 class="titulo">{{ t("landing.plans_title") }}</h2>
+                <p class="apoio">{{ t("landing.plans_text") }}</p>
+            </div>
+            <div class="planos-grade">
+                {% for plan in plans %}
+                    <article class="plano{% if plan.code == 'free' %} plano-gratis{% endif %}">
+                        <h3>{{ plan.name }}</h3>
+                        <p class="plano-preco">
+                            <span class="contador" data-contador-entrada="{{ plan.price_cents }}">{{ plan.price_cents | brl }}</span><small>{{ t("landing.per_month") }}</small>
+                        </p>
+                        <ul class="plano-limites">
+                            {% for label, value in [
+                                ("usage.users", plan.max_users), ("usage.customers", plan.max_customers),
+                                ("usage.products", plan.max_products), ("usage.quotes_month", plan.max_quotes_month)
+                            ] %}
+                                <li><span>{{ t(label) }}</span><b>{{ value | num if value is not none else t("usage.unlimited") }}</b></li>
+                            {% endfor %}
+                        </ul>
+                        {# EN: Included = solid line, not included = struck line (state as line form)
+                           PT: Incluído = linha contínua, não incluído = linha riscada (estado como forma de linha) #}
+                        <ul class="plano-recursos">
+                            {% for feature in ["discount_approval", "min_margin", "repurchase_alert", "csv_export", "multi_pipeline"] %}
+                                <li class="{{ 'tem' if plan['feat_' ~ feature] else 'nao-tem' }}">
+                                    <span aria-hidden="true" class="recurso-linha"></span>
+                                    <span>{{ t("landing.feat_" ~ feature) }}</span>
+                                    <span class="sr-only">{{ t("landing.included") if plan['feat_' ~ feature] else t("landing.not_included") }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <p class="plano-suporte">{{ t("landing.support_" ~ plan.support_level) }}</p>
+                        {% if plan.code == "free" %}
+                            <a class="botao botao-faixa" href="/register?type=distributor">{{ t("landing.cta") }}</a>
+                        {% elif support %}
+                            <a class="botao botao-contorno" href="{{ support }}" rel="noopener" target="_blank">{{ t("landing.talk_support") }}</a>
+                        {% else %}
+                            <a class="botao botao-contorno" href="/register?type=distributor">{{ t("landing.start_free_upgrade") }}</a>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        {# ===== D07 — EN: Questions. A plain comparison with today's routine (spreadsheet +
+                     WhatsApp) and honest answers about data, LGPD and leaving. <details> works
+                     without JavaScript and with the keyboard.
+                     PT: Dúvidas. Uma comparação simples com a rotina de hoje (planilha + WhatsApp)
+                     e respostas honestas sobre dados, LGPD e como sair. O <details> funciona sem
+                     JavaScript e pelo teclado. ===== #}
+        <section class="cena cena-duvidas" id="duvidas">
+            <div class="duvidas-texto">
+                <h2 class="titulo">{{ t("landing.faq_title") }}</h2>
+                <table class="comparativo">
+                    <caption class="sr-only">{{ t("landing.compare_caption") }}</caption>
+                    <thead>
+                        <tr><th scope="col"><span class="sr-only">{{ t("landing.compare_topic") }}</span></th><th scope="col">{{ t("landing.compare_today") }}</th><th scope="col">SupplyFlow</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for n in range(1, 4) %}
+                            <tr>
+                                <th scope="row">{{ t("landing.compare_row" ~ n) }}</th>
+                                <td class="comparativo-hoje">{{ t("landing.compare_today" ~ n) }}</td>
+                                <td class="comparativo-sf">{{ t("landing.compare_sf" ~ n) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="faq">
+                {% for n in range(1, 8) %}
+                    <details class="faq-item">
+                        <summary>{{ t("landing.faq_q" ~ n) }}</summary>
+                        <p>{{ t("landing.faq_a" ~ n) }}{% if n == 3 %} <a href="/privacy">{{ t("privacy.title") }}</a>.{% endif %}</p>
+                    </details>
+                {% endfor %}
+            </div>
+        </section>
+
+        {# ===== D08 — EN: Exit, one clear call | PT: Saída, uma chamada clara ===== #}
+        <section class="cena cena-saida" id="saida">
+            <h2 class="titulo-mestre titulo-saida" data-fx="palavras">{{ t("landing.close_title") }}</h2>
+            <p class="apoio">{{ t("landing.close_text") }}</p>
+            <div class="acoes">
+                <a class="botao botao-faixa botao-grande" href="/register?type=distributor">{{ t("landing.cta") }}</a>
+                {% if support %}
+                    <a class="link-faixa" href="{{ support }}" rel="noopener" target="_blank">{{ t("landing.talk_support") }}</a>
+                {% endif %}
+            </div>
+            <span aria-hidden="true" class="batente-final"></span>
+        </section>
+
+    </main>
+
+    <footer class="rodape">
+        <a aria-label="SupplyFlow" class="rodape-marca" href="/">{% include "partials/logo.svg" %}</a>
+        <p>{{ t("landing.footer_project") }}</p>
+        <p>{{ t("landing.footer_examples") }}</p>
+        <nav aria-label="{{ t('landing.footer_nav') }}" class="rodape-links">
+            <a href="/login">{{ t("nav.login") }}</a>
+            <a href="/register?type=distributor">{{ t("landing.cta") }}</a>
+            <a href="/register?type=buyer">{{ t("home.cta_buyer") }}</a>
+            <a href="/terms">{{ t("terms.title") }}</a>
+            <a href="/privacy">{{ t("privacy.title") }}</a>
+        </nav>
+    </footer>
+
+</body>
+
+</html>

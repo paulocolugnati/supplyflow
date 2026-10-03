@@ -1,0 +1,211 @@
+{#
+    EN: Customer page: data on the left, contacts on the right (with an inline form to add
+        one). WhatsApp buttons open wa.me with a ready message in the user's language.
+    PT: Página do cliente: dados à esquerda, contatos à direita (com um formulário para
+        adicionar). Os botões de WhatsApp abrem o wa.me com mensagem pronta no idioma do usuário.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import task_row, task_form, entry_form, timeline with context %}
+
+{% block title %}{{ customer.name }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ customer.name }}</h1>
+            <p class="subtitulo"><a href="/customers">{{ t("customers.back_list") }}</a></p>
+        </div>
+        <div class="acoes-linha">
+            {% if whatsapp %}
+                <a class="botao botao-faixa" href="{{ whatsapp }}" rel="noopener" target="_blank">{{ icon("mensagem", 18) }}WhatsApp</a>
+            {% endif %}
+            <a class="botao botao-contorno" href="/customers/{{ customer.id }}/edit">{{ icon("editar", 18) }}{{ t("customers.edit") }}</a>
+            {% if can_delete %}
+                <form action="/customers/{{ customer.id }}/delete" data-confirm="{{ t('customers.confirm_delete') }}" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <button class="botao-texto botao-perigo" type="submit">{{ t("customers.delete") }}</button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="grade-equipe">
+
+        {# EN: Data as a ruled list (dl) | PT: Dados como lista pautada (dl) #}
+        <section aria-labelledby="dados-titulo" class="chapa">
+            <h2 class="titulo-secao" id="dados-titulo">{{ t("customers.data") }}</h2>
+            <dl class="ficha">
+                <div><dt>{{ t("customers.cnpj") }}</dt><dd>{{ customer.cnpj | cnpj or "—" }}</dd></div>
+                <div><dt>{{ t("customers.segment") }}</dt><dd>{% if customer.segment %}<span class="tag-segmento">{{ customer.segment }}</span>{% else %}—{% endif %}</dd></div>
+                <div><dt>{{ t("customers.phone") }}</dt><dd>{{ customer.phone | phone or "—" }}</dd></div>
+                <div><dt>{{ t("customers.city") }}</dt><dd>{{ customer.city or "—" }}</dd></div>
+                <div><dt>{{ t("customers.owner") }}</dt><dd>{{ owner_name or "—" }}</dd></div>
+                <div><dt>{{ t("customers.since") }}</dt><dd>{{ customer.created_at | local_time }}</dd></div>
+            </dl>
+        </section>
+
+        {# EN: Buyers with portal access | PT: Compradores com acesso ao portal #}
+        <section aria-labelledby="compradores" class="chapa campo-inteiro-grade">
+            <div class="chapa-topo">
+                <div>
+                    <h2 class="titulo-secao" id="compradores">{{ t("buyers.title") }}</h2>
+                    <p class="dica">{{ t("buyers.help") }}</p>
+                </div>
+            </div>
+
+            {% if new_buyer_invite %}
+                <div class="chapa-destaque convite-novo">
+                    <p>{{ t("team.invite_created") }} <strong>{{ new_buyer_invite.email }}</strong></p>
+                    <div class="email-copiar">
+                        <input aria-label="{{ t('team.invite_link') }}" id="buyer-link" readonly type="text" value="{{ new_buyer_invite.link }}">
+                        <button class="botao botao-contorno botao-pequeno" data-copy="#buyer-link" type="button">{{ icon("copiar", 16) }}<span>{{ t("team.copy") }}</span></button>
+                        <a class="botao botao-faixa botao-pequeno" href="{{ new_buyer_invite.share }}" rel="noopener" target="_blank">{{ icon("mensagem", 16) }}<span>{{ t("team.share_whatsapp") }}</span></a>
+                    </div>
+                    <p class="dica">{{ t("team.invite_once") }}</p>
+                </div>
+            {% endif %}
+
+            {% if buyers or buyer_invites %}
+                <ul class="lista-contatos">
+                    {% for b in buyers %}
+                        <li>
+                            <span class="contato-texto">
+                                <strong>{{ b.name }} {% if b.brought %}<span class="tag-trazido">{{ t("buyers.brought") }}</span>{% endif %}</strong>
+                                <small>{{ b.email }}</small>
+                            </span>
+                            {% if can_delete %}
+                                <form action="/customers/{{ customer.id }}/buyers/{{ b.id }}/remove" data-confirm="{{ t('buyers.confirm_remove') }}" method="post">
+                                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                    <button class="botao-texto botao-perigo" type="submit">{{ t("buyers.remove") }}</button>
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    {% for inv in buyer_invites %}
+                        <li>
+                            <span aria-hidden="true" class="linha-aguardando"></span>
+                            <span class="contato-texto"><strong>{{ inv.email }}</strong><small>{{ t("buyers.pending") }} · {{ t("team.expires") }} {{ inv.expires_at | local_time }}</small></span>
+                            <form action="/customers/{{ customer.id }}/buyers/invites/{{ inv.id }}/revoke" method="post">
+                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                <button class="botao-texto botao-perigo" type="submit">{{ t("team.revoke") }}</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <form action="/customers/{{ customer.id }}/buyers/invite" class="adicionar-etapa" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <div class="campo">
+                    <label for="buyer-email">{{ t("buyers.email") }}</label>
+                    <input id="buyer-email" maxlength="254" name="email" placeholder="compras@cliente.com.br" required type="email">
+                </div>
+                <button class="botao botao-contorno" type="submit">{{ icon("adicionar", 18) }}{{ t("buyers.invite") }}</button>
+            </form>
+        </section>
+
+        {# EN: Tasks and history of this customer | PT: Tarefas e histórico deste cliente #}
+        <section aria-labelledby="cliente-tarefas" class="chapa campo-inteiro-grade">
+            <h2 class="titulo-secao" id="cliente-tarefas">{{ t("tasks.title_short") }}</h2>
+            {% if tasks %}
+                <ul class="lista-tarefas">{% for task in tasks %}{{ task_row(task, request.path ~ "#cliente-tarefas") }}{% endfor %}</ul>
+            {% else %}
+                <p class="dica">{{ t("tasks.none_here") }}</p>
+            {% endif %}
+            {{ task_form(request.path ~ "#cliente-tarefas", company_id=customer.id, staff=staff) }}
+        </section>
+
+        <section aria-labelledby="cliente-historico" class="chapa campo-inteiro-grade">
+            <h2 class="titulo-secao" id="cliente-historico">{{ t("pipeline.history") }}</h2>
+            {{ entry_form(request.path ~ "#cliente-historico", customer.id) }}
+            {{ timeline(history, request.path ~ "#cliente-historico", membership.role in ("owner", "admin")) }}
+        </section>
+
+        {# EN: Opportunities of this customer | PT: Oportunidades deste cliente #}
+        <section aria-labelledby="cliente-oportunidades" class="chapa campo-inteiro-grade">
+            <div class="chapa-topo">
+                <h2 class="titulo-secao" id="cliente-oportunidades">{{ t("pipeline.opportunities") }}</h2>
+                <a class="botao botao-contorno botao-pequeno" href="/opportunities/new?company={{ customer.id }}">{{ icon("adicionar", 16) }}{{ t("pipeline.new") }}</a>
+            </div>
+            {% if opportunities %}
+                <ul class="lista-contatos">
+                    {% for o in opportunities %}
+                        <li>
+                            <span aria-hidden="true" class="etapa-linha etapa-{{ o.stage_kind }}"></span>
+                            <span class="contato-texto"><a class="link-linha" href="/opportunities/{{ o.id }}"><strong>{{ o.title }}</strong></a><small>{{ o.stage_name }}</small></span>
+                            <b>{{ o.value_cents | brl }}</b>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="dica">{{ t("pipeline.no_opportunities") }}</p>
+            {% endif %}
+        </section>
+
+        {# EN: Contacts | PT: Contatos #}
+        <section aria-labelledby="contatos" class="chapa">
+            <h2 class="titulo-secao" id="contatos">{{ t("customers.contacts") }}</h2>
+
+            {% if contacts %}
+                <ul class="lista-contatos">
+                    {% for k in contacts %}
+                        <li>
+                            <span class="contato-texto">
+                                <strong>{{ k.name }}</strong>
+                                <small>{{ k.position or "" }}{% if k.position and (k.phone or k.email) %} · {% endif %}{{ k.phone | phone }}{% if k.phone and k.email %} · {% endif %}{{ k.email or "" }}</small>
+                            </span>
+                            {% if k.whatsapp %}
+                                <a aria-label="WhatsApp {{ k.name }}" class="botao-icone" href="{{ k.whatsapp }}" rel="noopener" target="_blank" title="WhatsApp">{{ icon("mensagem", 18) }}</a>
+                            {% endif %}
+                            <details class="menu">
+                                <summary aria-label="{{ t('team.manage') }} {{ k.name }}" class="botao-icone">{{ icon("mais", 20) }}</summary>
+                                <div class="menu-painel menu-direita">
+                                    <a class="menu-item" href="/customers/{{ customer.id }}/contacts/{{ k.id }}/edit">{{ t("customers.edit") }}</a>
+                                    {% if can_delete %}
+                                        <form action="/customers/{{ customer.id }}/contacts/{{ k.id }}/delete" data-confirm="{{ t('customers.confirm_delete_contact') }}" method="post">
+                                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                            <button class="menu-item menu-perigo" type="submit">{{ t("customers.delete") }}</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </details>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="dica">{{ t("customers.no_contacts") }}</p>
+            {% endif %}
+
+            {# EN: Add contact, folded by default | PT: Adicionar contato, fechado por padrão #}
+            <details class="dobra" {% if not contacts %}open{% endif %}>
+                <summary class="botao botao-contorno botao-pequeno">{{ icon("adicionar", 16) }}{{ t("customers.add_contact") }}</summary>
+                <form action="/customers/{{ customer.id }}/contacts" class="formulario" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <div class="campo">
+                        <label for="contact-name">{{ t("customers.contact_name") }}</label>
+                        <input id="contact-name" maxlength="120" name="name" required type="text">
+                    </div>
+                    <div class="campo">
+                        <label for="contact-position">{{ t("customers.position") }}</label>
+                        <input id="contact-position" maxlength="60" name="position" placeholder="{{ t('customers.position_placeholder') }}" type="text">
+                    </div>
+                    <div class="campos-dupla">
+                        <div class="campo">
+                            <label for="contact-phone">{{ t("customers.phone") }}</label>
+                            <input id="contact-phone" inputmode="tel" maxlength="25" name="phone" type="tel">
+                        </div>
+                        <div class="campo">
+                            <label for="contact-email">{{ t("register.email") }}</label>
+                            <input id="contact-email" maxlength="254" name="email" type="email">
+                        </div>
+                    </div>
+                    <button class="botao botao-faixa" type="submit">{{ t("customers.add_contact") }}</button>
+                </form>
+            </details>
+        </section>
+
+    </div>
+
+{% endblock %}

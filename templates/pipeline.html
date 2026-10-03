@@ -1,0 +1,120 @@
+{#
+    EN: Pipeline board: one column per stage (a lane on the floor). Cards move with a small
+        "move to" menu (a POST form), so it works with keyboard, touch and without JavaScript;
+        no drag and drop to fail. Won/lost columns carry their line form (solid / struck).
+    PT: Quadro do funil: uma coluna por etapa (uma faixa no piso). Os cartões se movem por um
+        pequeno menu "mover para" (um formulário POST), então funciona com teclado, toque e sem
+        JavaScript; sem arrastar e soltar para dar errado. Colunas won/lost levam a forma de
+        linha delas (contínua / riscada).
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import export_button with context %}
+
+{% block title %}{{ t("pipeline.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ pipeline.name }}</h1>
+            <p class="subtitulo">{{ t("pipeline.title") }}</p>
+        </div>
+        <div class="acoes-linha">
+            {{ export_button("opportunities") }}
+            {% if membership.role in ("owner", "admin") %}
+                <a class="botao botao-contorno" href="/pipeline/settings">{{ icon("regua", 18) }}{{ t("pipeline.settings") }}</a>
+            {% endif %}
+            <a class="botao botao-faixa" href="/opportunities/new?p={{ pipeline.id }}">{{ icon("adicionar", 18) }}{{ t("pipeline.new") }}</a>
+        </div>
+    </header>
+
+    {% if membership.role in ("owner", "admin") or pipelines | length > 1 %}
+    <form action="/pipeline" class="filtros" method="get">
+        {% if pipelines | length > 1 %}
+            <div class="campo">
+                <label class="sr-only" for="p">{{ t("pipeline.choose") }}</label>
+                <select id="p" name="p">
+                    {% for item in pipelines %}
+                        <option {% if item.id == pipeline.id %}selected{% endif %} value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% else %}
+            <input name="p" type="hidden" value="{{ pipeline.id }}">
+        {% endif %}
+        {# EN: only managers choose whose cards to see; sellers always see their own
+           PT: só gerentes escolhem de quem ver os cartões; vendedores sempre veem os próprios #}
+        {% if membership.role in ("owner", "admin") %}
+        <div class="campo">
+            <label class="sr-only" for="owner">{{ t("customers.owner") }}</label>
+            <select id="owner" name="owner">
+                <option value="">{{ t("pipeline.everyone") }}</option>
+                <option {% if owner == "me" %}selected{% endif %} value="me">{{ t("pipeline.only_mine") }}</option>
+            </select>
+        </div>
+        {% endif %}
+        <button class="botao botao-contorno" type="submit">{{ t("customers.filter") }}</button>
+    </form>
+    {% endif %}
+
+    {# EN: Drag and drop (app.js) posts this same form, so the server rules are the ones that move a card
+       PT: Arrastar e soltar (app.js) envia este mesmo formulário, então quem move o cartão são as regras do servidor #}
+    <form data-mover-form hidden method="post">
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+        <input name="stage_id" type="hidden" value="">
+        <input name="lost_reason" type="hidden" value="">
+        <input name="next" type="hidden" value="{{ request.full_path }}">
+    </form>
+    <p class="dica dica-arrastar" data-mover-modelo="{{ t('pipeline.drop_lost_reason') }}">{{ t("pipeline.drag_hint") }}</p>
+
+    <div class="quadro" role="list">
+        {% for column in columns %}
+            {% set stage = column.stage %}
+            <section aria-labelledby="etapa-{{ stage.id }}" class="coluna coluna-{{ stage.kind }}" role="listitem">
+                <header class="coluna-topo">
+                    <span aria-hidden="true" class="coluna-linha"></span>
+                    <h2 id="etapa-{{ stage.id }}">{{ stage.name }}</h2>
+                    <span class="coluna-conta">{{ column.cards | length }}</span>
+                    <p class="coluna-total">{{ column.total | brl }}</p>
+                </header>
+
+                <ul class="cartoes" data-etapa="{{ stage.id }}" data-tipo="{{ stage.kind }}">
+                    {% for card in column.cards %}
+                        <li class="cartao" data-cartao="{{ card.id }}" draggable="true">
+                            <a class="cartao-link" href="/opportunities/{{ card.id }}">
+                                <strong>{{ card.title }}</strong>
+                                <span class="cartao-cliente">{{ card.company_name }}</span>
+                            </a>
+                            <div class="cartao-rodape">
+                                <b>{{ card.value_cents | brl }}</b>
+                                {% if card.expected_close and stage.kind == "open" %}
+                                    <span class="cartao-data">{{ t("pipeline.until") }} {{ card.expected_close[8:10] }}/{{ card.expected_close[5:7] }}</span>
+                                {% endif %}
+                                <details class="menu">
+                                    <summary aria-label="{{ t('pipeline.move_to') }}: {{ card.title }}" class="botao-icone botao-mini">{{ icon("seta", 16) }}</summary>
+                                    <div class="menu-painel">
+                                        <span class="menu-titulo">{{ t("pipeline.move_to") }}</span>
+                                        {% for target in stages if target.id != stage.id %}
+                                            <form action="/opportunities/{{ card.id }}/stage" method="post">
+                                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                <input name="stage_id" type="hidden" value="{{ target.id }}">
+                                                <input name="next" type="hidden" value="{{ request.full_path }}">
+                                                <button class="menu-item" type="submit">{{ target.name }}</button>
+                                            </form>
+                                        {% endfor %}
+                                    </div>
+                                </details>
+                            </div>
+                            {% if card.owner_name %}<small class="cartao-dono">{{ card.owner_name }}</small>{% endif %}
+                            {% if card.closed_manually %}<small class="tag-plano">{{ t("pipeline.closed_manually") }}</small>{% endif %}
+                        </li>
+                    {% else %}
+                        <li class="cartao-vazio">{{ t("pipeline.empty_column") }}</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endfor %}
+    </div>
+
+{% endblock %}

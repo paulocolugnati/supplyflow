@@ -1,0 +1,91 @@
+{#
+    EN: First setup of a distributor (owner only). Values are typed as percentages and stored
+        as basis points by app.py (parse_percent). The side panel is a live ruler: the stops
+        move while the owner types (app.js), so the ceilings are seen, not only read.
+    PT: Configuração inicial da distribuidora (só o owner). Os valores são digitados em
+        porcentagem e guardados em basis points pelo app.py (parse_percent). O painel lateral é
+        uma régua ao vivo: os batentes se mexem enquanto o dono digita (app.js), então os tetos
+        são vistos, não só lidos.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("onboarding.title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    {# EN: Show what the user typed after an error, otherwise the saved values
+       PT: Depois de um erro mostra o que o usuário digitou; senão, os valores salvos #}
+    {% set member_value = form.member_limit if form else (ws.member_discount_limit_bps | pct | replace("%", "")) %}
+    {% set admin_value = form.admin_limit if form else (ws.admin_discount_limit_bps | pct | replace("%", "")) %}
+    {% set margin_value = form.min_margin if form else (ws.min_margin_bps | pct | replace("%", "")) %}
+
+    {% if not done %}<p class="passo-onboarding">{{ t("onboarding.step").replace("{n}", "2") }}</p>{% endif %}
+    <h1 class="titulo-pagina">{{ t("onboarding.title") }}</h1>
+    <p class="subtitulo">{{ t("onboarding.subtitle") }}</p>
+
+    {% if not ws.feat_discount_approval %}
+        <div class="aviso aviso-info">{{ icon("info", 18) }}<p>{{ t("onboarding.free_note") }}</p></div>
+    {% endif %}
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <form action="/onboarding/limits" class="formulario" data-onboarding method="post">
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        {% for field, value, label, hint in [
+            ("member_limit", member_value, "onboarding.member_limit", "onboarding.member_hint"),
+            ("admin_limit", admin_value, "onboarding.admin_limit", "onboarding.admin_hint"),
+            ("min_margin", margin_value, "onboarding.min_margin", "onboarding.min_margin_hint")
+        ] %}
+            <div class="campo campo-percentual">
+                <label for="{{ field }}">{{ t(label) }}</label>
+                <small class="dica" id="{{ field }}-dica">{{ t(hint) }}</small>
+                <div class="entrada-sufixo">
+                    <input aria-describedby="{{ field }}-dica" id="{{ field }}" inputmode="decimal" maxlength="6" name="{{ field }}" required type="text" value="{{ value }}">
+                    <span aria-hidden="true">%</span>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="acoes-linha">
+            <button class="botao botao-faixa" name="action" type="submit" value="save">{{ t("onboarding.save") }}</button>
+            {# EN: formnovalidate lets "skip" submit even with empty fields
+               PT: formnovalidate deixa o "pular" enviar mesmo com campos vazios #}
+            {% if done %}
+                <a class="botao botao-contorno" href="/settings">{{ t("doc.back") }}</a>
+            {% else %}
+                <button class="botao botao-contorno" formnovalidate name="action" type="submit" value="skip">{{ t("onboarding.skip") }}</button>
+            {% endif %}
+        </div>
+    </form>
+
+    {% set support = support_link(t("landing.support_message")) %}
+    {% if support %}
+        <p class="acesso-rodape"><a href="{{ support }}" rel="noopener" target="_blank">{{ t("onboarding.support") }}</a></p>
+    {% endif %}
+{% endblock %}
+
+{% block panel %}
+    {% set admin_bps = ws.admin_discount_limit_bps %}
+    {% set escala = 20 if admin_bps <= 1500 else ((admin_bps // 500) + 1) * 5 %}
+    <p class="acesso-frase">{{ ws.workspace_name }}</p>
+    <span class="etiqueta-painel">{{ ws.plan_name }}</span>
+    <div class="regua regua-dinamica regua-painel" data-regua-viva style="--escala: {{ escala }}; --vendedor: {{ ws.member_discount_limit_bps / 100 }}; --gerente: {{ admin_bps / 100 }};">
+        <div class="regua-corpo">
+            <span class="regua-zona zona-gerente"></span>
+            <span class="regua-zona zona-dono"></span>
+            <span class="regua-batente batente-vendedor"></span>
+            <span class="regua-batente batente-gerente"></span>
+        </div>
+        <div class="regua-legenda">
+            <span class="legenda-vendedor">{{ t("landing.stop_seller") }} <b data-regua-valor="vendedor">{{ ws.member_discount_limit_bps | pct }}</b></span>
+            <span class="legenda-gerente">{{ t("landing.stop_manager") }} <b data-regua-valor="gerente">{{ admin_bps | pct }}</b></span>
+        </div>
+    </div>
+    <p class="painel-margem">{{ t("onboarding.min_margin") }}: <b data-regua-valor="margem">{{ ws.min_margin_bps | pct }}</b></p>
+{% endblock %}

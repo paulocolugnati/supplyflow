@@ -1,0 +1,70 @@
+{#
+    EN: "My tasks": overdue first (hatched mark), then today, upcoming and undated. Admins can
+        switch to the whole team. Dates use the Sao Paulo calendar.
+    PT: "Minhas tarefas": atrasadas primeiro (marca hachurada), depois hoje, próximas e sem prazo.
+        Admins podem trocar para a equipe toda. As datas usam o calendário de São Paulo.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import task_row, task_form with context %}
+
+{% block title %}{{ t("tasks.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("tasks.title") if scope == "mine" else t("tasks.team_title") }}</h1>
+            <p class="subtitulo">{{ t("tasks.today_is") }} {{ today[8:10] }}/{{ today[5:7] }}/{{ today[0:4] }}</p>
+        </div>
+        {% if membership.role in ("owner", "admin") %}
+            <a class="botao botao-contorno" href="/tasks?scope={{ 'team' if scope == 'mine' else 'mine' }}">{{ t("tasks.see_team") if scope == "mine" else t("tasks.see_mine") }}</a>
+        {% endif %}
+    </header>
+
+    <div class="grade-equipe">
+        <div class="coluna-tarefas">
+            {% set total = groups.overdue | length + groups.today | length + groups.upcoming | length + groups.undated | length %}
+            {% if total == 0 %}
+                <section class="vazio chapa">
+                    <span aria-hidden="true" class="vazio-faixa"></span>
+                    <h2 class="titulo-secao">{{ t("tasks.empty_title") }}</h2>
+                    <p>{{ t("tasks.empty_text") }}</p>
+                </section>
+            {% endif %}
+            {% for key in ("overdue", "today", "upcoming", "undated") %}
+                {% if groups[key] %}
+                    <section aria-labelledby="grupo-{{ key }}" class="chapa grupo-tarefas grupo-{{ key }}">
+                        <h2 class="titulo-secao" id="grupo-{{ key }}">{{ t("tasks.group_" ~ key) }} <span class="contagem-grupo">{{ groups[key] | length }}</span></h2>
+                        <ul class="lista-tarefas">
+                            {% for task in groups[key] %}
+                                {{ task_row(task, request.full_path) }}
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="coluna-lateral">
+            <section aria-labelledby="nova-tarefa" class="chapa">
+                <h2 class="titulo-secao" id="nova-tarefa">{{ t("tasks.new") }}</h2>
+                {% if companies %}
+                    {{ task_form(request.full_path, companies=companies, staff=staff) }}
+                {% else %}
+                    <p class="dica">{{ t("pipeline.need_customer") }}</p>
+                {% endif %}
+            </section>
+
+            {% if done %}
+                <section aria-labelledby="feitas" class="chapa">
+                    <h2 class="titulo-secao" id="feitas">{{ t("tasks.recent_done") }}</h2>
+                    <ul class="lista-tarefas">
+                        {% for task in done %}{{ task_row(task, request.full_path, false) }}{% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

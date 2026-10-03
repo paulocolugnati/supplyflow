@@ -1,0 +1,94 @@
+{#
+    EN: Create / edit a product. The cost can be typed in R$ or as a % of the price; a live
+        preview (app.js) shows the cost in R$ and the margin as you type. The server does the
+        real conversion and validation.
+    PT: Criar / editar um produto. O custo pode ser digitado em R$ ou em % do preço; uma
+        prévia ao vivo (app.js) mostra o custo em R$ e a margem enquanto você digita. O
+        servidor faz a conversão e a validação de verdade.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ product.name if product else t("products.new") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ product.name if product else t("products.new") }}</h1>
+            <p class="subtitulo"><a href="/products">{{ t("products.back") }}</a></p>
+        </div>
+    </header>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% if product %}
+        <div class="aviso aviso-info">{{ icon("info", 18) }}<p>{{ t("products.price_note") }}</p></div>
+    {% endif %}
+
+    <form action="{{ '/products/' ~ product.id ~ '/edit' if product else '/products/new' }}" class="chapa formulario formulario-largo" data-produto method="post" novalidate>
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        <div class="campo">
+            <label for="sku">{{ t("products.sku") }}</label>
+            <input autocapitalize="characters" autofocus class="entrada-sku" id="sku" maxlength="30" name="sku" required type="text" value="{{ form.sku or '' }}">
+            <small class="dica">{{ t("products.sku_hint") }}</small>
+        </div>
+
+        <div class="campo">
+            <label for="unit">{{ t("products.unit") }}</label>
+            <select id="unit" name="unit">
+                {% for unit in units %}
+                    <option {% if form.unit == unit %}selected{% endif %} value="{{ unit }}">{{ t("unit." ~ unit) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="campo campo-inteiro">
+            <label for="name">{{ t("products.name") }}</label>
+            <input id="name" maxlength="120" name="name" placeholder="{{ t('products.name_placeholder') }}" required type="text" value="{{ form.name or '' }}">
+        </div>
+
+        <div class="campo">
+            <label for="price">{{ t("products.price") }}</label>
+            <div class="entrada-prefixo">
+                <span aria-hidden="true">R$</span>
+                <input data-preco id="price" inputmode="decimal" maxlength="14" name="price" placeholder="0,00" required type="text" value="{{ form.price or '' }}">
+            </div>
+        </div>
+
+        <div class="campo">
+            <span class="rotulo-campo" id="cost-label">{{ t("products.cost") }} <small>({{ t("products.optional") }})</small></span>
+            {# EN: R$ or % switch | PT: Seletor R$ ou % #}
+            <div class="custo-linha">
+                <div aria-labelledby="cost-label" class="alternador" role="radiogroup">
+                    {% for mode, label in [("brl", "R$"), ("pct", "%")] %}
+                        <label>
+                            <input data-modo-custo name="cost_mode" type="radio" value="{{ mode }}" {% if (form.cost_mode or "brl") == mode %}checked{% endif %}>
+                            <span>{{ label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <input aria-labelledby="cost-label" data-custo id="cost" inputmode="decimal" maxlength="14" name="cost" placeholder="0,00" type="text" value="{{ form.cost or '' }}">
+            </div>
+            <small class="dica">{{ t("products.cost_hint") }}</small>
+        </div>
+
+        {# EN: Live preview (filled by app.js) | PT: Prévia ao vivo (preenchida pelo app.js) #}
+        <div class="previa-margem campo-inteiro" aria-live="polite" data-previa-margem>
+            <span>{{ t("products.cost_in_brl") }} <b data-previa-custo>—</b></span>
+            <span>{{ t("products.margin") }} <b data-previa-margem-valor>—</b></span>
+        </div>
+
+        <div class="acoes-linha campo-inteiro">
+            <button class="botao botao-faixa" type="submit">{{ t("customers.save") }}</button>
+            <a class="botao botao-contorno" href="/products">{{ t("customers.cancel") }}</a>
+        </div>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{#
+    EN: Choose a new password from a reset link (password_reset.py). An unknown, used or
+        expired link shows one neutral message and a way to ask for a new one.
+    PT: Escolher uma senha nova a partir do link (password_reset.py). Link desconhecido, usado
+        ou vencido mostra uma mensagem neutra e um jeito de pedir outro.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("reset.new_title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    <h1 class="titulo-pagina">{{ t("reset.new_title") }}</h1>
+
+    {% if invalid %}
+        <div class="aviso aviso-erro" role="alert">{{ icon("alerta", 18) }}<p>{{ t("reset.invalid") }}</p></div>
+        <p class="acesso-rodape"><a href="/forgot">{{ t("reset.ask_again") }}</a></p>
+    {% else %}
+        <p class="subtitulo">{{ t("reset.new_subtitle").replace("{email}", email) }}</p>
+        {% if errors %}
+            <div class="aviso aviso-erro" role="alert">{{ icon("alerta", 18) }}<ul>{% for e in errors %}<li>{{ t(e) }}</li>{% endfor %}</ul></div>
+        {% endif %}
+        <form class="formulario" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <div class="campo">
+                <label for="password">{{ t("reset.new_password") }}</label>
+                <small class="dica" id="password-dica">{{ t("register.password_hint") }}</small>
+                <input aria-describedby="password-dica" autocomplete="new-password" autofocus id="password" maxlength="128" minlength="8" name="password" required type="password">
+            </div>
+            <div class="campo">
+                <label for="confirmation">{{ t("register.confirmation") }}</label>
+                <input autocomplete="new-password" id="confirmation" maxlength="128" minlength="8" name="confirmation" required type="password">
+            </div>
+            <button class="botao botao-faixa botao-largo" type="submit">{{ t("reset.save") }}</button>
+        </form>
+    {% endif %}
+{% endblock %}

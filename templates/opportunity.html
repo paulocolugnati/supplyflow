@@ -1,0 +1,141 @@
+{#
+    EN: Opportunity page. The stage track is the floor lane again: every stage is a stop,
+        the current one carries the pointer; each stop is a button that moves the opportunity.
+        Moving to a lost stage asks for an optional reason.
+    PT: Página da oportunidade. O trilho de etapas é de novo a faixa do piso: cada etapa é
+        uma parada, a atual leva o ponteiro; cada parada é um botão que move a oportunidade.
+        Mover para uma etapa de perda pede um motivo opcional.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import task_row, task_form, entry_form, timeline with context %}
+
+{% block title %}{{ opportunity.title }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ opportunity.title }}</h1>
+            <p class="subtitulo"><a href="/customers/{{ opportunity.company_id }}">{{ opportunity.company_name }}</a> · <a href="/pipeline?p={{ opportunity.pipeline_id }}">{{ opportunity.pipeline_name }}</a></p>
+        </div>
+        <div class="acoes-linha">
+            <a class="botao botao-contorno" href="/opportunities/{{ opportunity.id }}/edit">{{ icon("editar", 18) }}{{ t("customers.edit") }}</a>
+            {% if can_delete %}
+                <form action="/opportunities/{{ opportunity.id }}/delete" data-confirm="{{ t('pipeline.confirm_delete') }}" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <button class="botao-texto botao-perigo" type="submit">{{ t("customers.delete") }}</button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    {# EN: Stage track | PT: Trilho de etapas #}
+    <section aria-labelledby="etapas-titulo" class="chapa">
+        <h2 class="titulo-secao" id="etapas-titulo">{{ t("pipeline.stage") }}: {{ opportunity.stage_name }}</h2>
+        <ol class="trilho-etapas">
+            {% for stage in stages %}
+                {% set current = stage.id == opportunity.stage_id %}
+                <li class="parada parada-{{ stage.kind }}{% if current %} parada-atual{% endif %}">
+                    {% if current %}
+                        <span aria-current="step" class="parada-botao">
+                            <span aria-hidden="true" class="parada-marca"></span>
+                            <span>{{ stage.name }}</span>
+                        </span>
+                    {% elif stage.kind == "lost" %}
+                        {# EN: Lost asks for a reason | PT: Perda pede um motivo #}
+                        <details class="menu">
+                            <summary class="parada-botao">
+                                <span aria-hidden="true" class="parada-marca"></span>
+                                <span>{{ stage.name }}</span>
+                            </summary>
+                            <form action="/opportunities/{{ opportunity.id }}/stage" class="menu-painel formulario" method="post">
+                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                <input name="stage_id" type="hidden" value="{{ stage.id }}">
+                                <div class="campo">
+                                    <label for="motivo-{{ stage.id }}">{{ t("pipeline.lost_reason") }}</label>
+                                    <input id="motivo-{{ stage.id }}" maxlength="200" name="lost_reason" placeholder="{{ t('pipeline.lost_placeholder') }}" type="text">
+                                </div>
+                                <button class="botao botao-contorno botao-pequeno" type="submit">{{ t("pipeline.mark_lost") }}</button>
+                            </form>
+                        </details>
+                    {% else %}
+                        <form action="/opportunities/{{ opportunity.id }}/stage" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <input name="stage_id" type="hidden" value="{{ stage.id }}">
+                            <button class="parada-botao" type="submit">
+                                <span aria-hidden="true" class="parada-marca"></span>
+                                <span>{{ stage.name }}</span>
+                            </button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+        {% if opportunity.closed_at %}
+            <p class="dica">{{ t("pipeline.closed_at") }} {{ opportunity.closed_at | local_time }}{% if opportunity.lost_reason %} · {{ t("pipeline.lost_reason") }}: {{ opportunity.lost_reason }}{% endif %}{% if opportunity.closed_manually %} · <span class="tag-plano">{{ t("pipeline.closed_manually") }}</span>{% endif %}</p>
+        {% endif %}
+    </section>
+
+    {# EN: Quotes of this opportunity | PT: Orçamentos desta oportunidade #}
+    <section aria-labelledby="op-orcamentos" class="chapa">
+        <div class="chapa-topo">
+            <h2 class="titulo-secao" id="op-orcamentos">{{ t("quotes.title") }}</h2>
+            {% if can_quote %}
+                <form action="/opportunities/{{ opportunity.id }}/quotes" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <button class="botao botao-faixa botao-pequeno" type="submit">{{ icon("adicionar", 16) }}{{ t("quotes.new") }}</button>
+                </form>
+            {% else %}
+                <span class="tag-plano">{{ t("quotes.quota_short") }}</span>
+            {% endif %}
+        </div>
+        {% if quotes %}
+            <ul class="lista-contatos">
+                {% for q in quotes %}
+                    <li>
+                        <span class="contato-texto"><a class="link-linha" href="/quotes/{{ q.id }}"><strong>#{{ "%04d" | format(q.number) }}</strong></a><small>{{ q.created_at | local_time }}</small></span>
+                        <span class="estado-orcamento estado-{{ q.status }}"><span aria-hidden="true" class="estado-traco"></span>{{ t("quotes.status_" ~ q.status) }}</span>
+                        <b>{{ q.final_total_cents | brl }}</b>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="dica">{{ t("quotes.none_yet") }}</p>
+        {% endif %}
+    </section>
+
+    <div class="grade-equipe">
+        <section aria-labelledby="op-dados" class="chapa">
+            <h2 class="titulo-secao" id="op-dados">{{ t("customers.data") }}</h2>
+            <dl class="ficha">
+                <div><dt>{{ t("pipeline.value") }}</dt><dd><b class="valor-grande">{{ opportunity.value_cents | brl }}</b></dd></div>
+                <div><dt>{{ t("customers.col_customer") }}</dt><dd><a href="/customers/{{ opportunity.company_id }}">{{ opportunity.company_name }}</a></dd></div>
+                <div><dt>{{ t("pipeline.contact") }}</dt><dd>{{ opportunity.contact_name or "—" }}</dd></div>
+                <div><dt>{{ t("customers.owner") }}</dt><dd>{{ opportunity.owner_name or "—" }}</dd></div>
+                <div><dt>{{ t("pipeline.expected_close") }}</dt><dd>{% if opportunity.expected_close %}{{ opportunity.expected_close[8:10] }}/{{ opportunity.expected_close[5:7] }}/{{ opportunity.expected_close[0:4] }}{% else %}—{% endif %}</dd></div>
+                <div><dt>{{ t("pipeline.created_at") }}</dt><dd>{{ opportunity.created_at | local_time }}</dd></div>
+            </dl>
+        </section>
+
+        {# EN: Tasks + history of this opportunity | PT: Tarefas + histórico desta oportunidade #}
+        <div class="coluna-lateral">
+            <section aria-labelledby="op-tarefas" class="chapa">
+                <h2 class="titulo-secao" id="op-tarefas">{{ t("tasks.title_short") }}</h2>
+                {% if tasks %}
+                    <ul class="lista-tarefas">{% for task in tasks %}{{ task_row(task, request.path ~ "#op-tarefas", false) }}{% endfor %}</ul>
+                {% else %}
+                    <p class="dica">{{ t("tasks.none_here") }}</p>
+                {% endif %}
+                {{ task_form(request.path ~ "#op-tarefas", company_id=opportunity.company_id, opportunity_id=opportunity.id, staff=staff) }}
+            </section>
+
+            <section aria-labelledby="op-historico" class="chapa">
+                <h2 class="titulo-secao" id="op-historico">{{ t("pipeline.history") }}</h2>
+                {{ entry_form(request.path ~ "#op-historico", opportunity.company_id, opportunity.id) }}
+                {{ timeline(history, request.path ~ "#op-historico", membership.role in ("owner", "admin")) }}
+            </section>
+        </div>
+    </div>
+
+{% endblock %}

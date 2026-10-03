@@ -1,0 +1,29 @@
+{#
+    EN: Document skeleton shared by the app shell (layout.html) and the auth shell (auth.html).
+        The theme comes from the "theme" cookie, so the first paint is already right.
+    PT: Esqueleto do documento compartilhado pela casca do sistema (layout.html) e pela casca
+        de acesso (auth.html). O tema vem do cookie "theme", então a primeira pintura já vem certa.
+#}
+<!DOCTYPE html>
+<html data-theme="{{ theme }}" lang="{{ 'pt-BR' if lang == 'pt' else 'en' }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="{{ '#F4F8F7' if theme == 'light' else '#0B2A33' }}" name="theme-color">
+    <title>{% block title %}SupplyFlow{% endblock %}</title>
+
+    <link href="/static/brand/simbolo.svg" rel="icon" type="image/svg+xml">
+    <link as="font" crossorigin href="/static/fonts/archivo-latin.woff2" rel="preload" type="font/woff2">
+    <link href="/static/sf-base.css" rel="stylesheet">
+    <link href="/static/app.css" rel="stylesheet">
+    <script defer src="/static/sf.js"></script>
+    <script defer src="/static/app.js"></script>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    <a class="pular" href="#conteudo">{{ t("landing.skip") }}</a>
+    {% block body %}{% endblock %}
+</body>
+
+</html>

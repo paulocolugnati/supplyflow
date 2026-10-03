@@ -1,0 +1,157 @@
+{#
+    EN: App shell for logged-in pages. On desktop, a left rail (the floor lane of the landing
+        page turned into the menu); on phones, a top bar with the account menu and a bottom
+        bar with the main items, within thumb reach. Pages fill the "main" block.
+        Without a logged-in user (e.g. an error page), it falls back to a minimal top bar.
+    PT: Casca do sistema para páginas logadas. No computador, um trilho à esquerda (a faixa
+        de piso da página inicial virou o menu); no celular, uma barra no topo com o menu da
+        conta e uma barra embaixo com os itens principais, ao alcance do polegar. As páginas
+        preenchem o bloco "main". Sem usuário logado (ex.: página de erro), vira uma barra simples.
+#}
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block body_class %}app{% endblock %}
+
+{% block body %}
+
+    {# EN: Main items; each knows who can see it | PT: Itens principais; cada um sabe quem pode ver #}
+    {% set nav_items = [] %}
+    {% if membership %}
+        {% set nav_items = nav_items + [("/dashboard", "painel", "nav.dashboard")] %}
+        {% set nav_items = nav_items + [("/pipeline", "funil", "nav.pipeline")] %}
+        {% set nav_items = nav_items + [("/quotes", "orcamento", "nav.quotes")] %}
+        {% set nav_items = nav_items + [("/tasks", "tarefas", "nav.tasks")] %}
+        {% set nav_items = nav_items + [("/customers", "clientes", "nav.customers")] %}
+        {% set nav_items = nav_items + [("/products", "produtos", "nav.products")] %}
+        {% if membership.role in ("owner", "admin") %}
+            {% set nav_items = nav_items + [("/approvals", "certo", "nav.approvals")] %}
+            {% set nav_items = nav_items + [("/team", "equipe", "nav.team")] %}
+        {% endif %}
+    {% endif %}
+    {% if current_user and (not membership or has_buyer_links) and not (current_user.is_platform_admin and not membership and not has_buyer_links) %}
+        {% set nav_items = nav_items + [("/portal", "portal", "nav.portal")] %}
+    {% endif %}
+    {# EN: Only the platform operator sees this item (flag set in the terminal)
+       PT: Só quem opera a plataforma vê este item (flag ligada pelo terminal) #}
+    {% if current_user and current_user.is_platform_admin %}
+        {% set nav_items = nav_items + [("/platform", "regua", "nav.platform")] %}
+    {% endif %}
+    
+    {# EN: Account controls, rendered in the rail (desktop) and in the top-bar menu (phone)
+       PT: Controles da conta, mostrados no trilho (computador) e no menu do topo (celular) #}
+    {% macro account_controls() %}
+        {% if membership %}
+            <div class="conta-distribuidora">
+                <a class="etiqueta-endereco etiqueta-link" href="/plans">{{ membership.plan_name }}</a>
+                <strong>{{ membership.workspace_name }}</strong>
+                <span class="conta-cargo">{{ t("role." ~ membership.role) }}</span>
+                {% if membership.role == "owner" %}
+                    <a class="conta-config" href="/settings">{{ icon("regua", 16) }}{{ t("settings.title") }}</a>
+                {% endif %}
+            </div>
+            {% if my_workspaces | length > 1 %}
+                <div class="conta-trocar">
+                    <span class="conta-rotulo">{{ t("nav.switch_workspace") }}</span>
+                    {% for ws in my_workspaces %}
+                        <form action="/workspace/switch" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <input name="workspace_id" type="hidden" value="{{ ws.id }}">
+                            <button class="conta-opcao" {% if ws.id == membership.workspace_id %}aria-current="true"{% endif %} type="submit">
+                                {{ icon("trocar", 16) }}<span>{{ ws.name }}</span>
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+        <div class="conta-usuario">
+            {{ icon("conta", 18) }}
+            <span><strong>{{ current_user.name }}</strong><small>{{ current_user.email }}</small></span>
+        </div>
+        <div class="conta-acoes">
+            <button aria-label="{{ t('landing.theme_toggle') }}" aria-pressed="{{ 'true' if theme == 'light' else 'false' }}" class="botao-icone" data-tema-botao title="{{ t('landing.theme_toggle') }}" type="button">{{ icon("tema", 18) }}</button>
+            <a aria-label="{{ t('nav.language') }}" class="botao-icone botao-idioma" href="/lang/{{ 'en' if lang == 'pt' else 'pt' }}?next={{ request.path | urlencode }}" title="{{ t('nav.language') }}">{{ "EN" if lang == "pt" else "PT" }}</a>
+            <form action="/logout" class="conta-sair" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <button class="botao-texto" type="submit">{{ icon("sair", 18) }}<span>{{ t("nav.logout") }}</span></button>
+            </form>
+        </div>
+    {% endmacro %}
+
+    {% if current_user %}
+
+        {# EN: Phone top bar | PT: Barra do topo no celular #}
+        <header class="app-topo-movel">
+            <a aria-label="SupplyFlow" class="app-marca" href="/">{% include "partials/logo.svg" %}</a>
+            <details class="menu menu-conta">
+                <summary aria-label="{{ t('nav.account') }}" class="botao-icone">{{ icon("conta", 20) }}</summary>
+                <div class="menu-painel">{{ account_controls() }}</div>
+            </details>
+        </header>
+
+        {# EN: The rail: brand, main items, account | PT: O trilho: marca, itens principais, conta #}
+        <nav aria-label="{{ t('nav.main') }}" class="app-trilho">
+            <a aria-label="SupplyFlow" class="app-marca" href="/">{% include "partials/logo.svg" %}</a>
+            <ul class="app-nav">
+                {% for href, icon_name, key in nav_items %}
+                    {% set current = request.path == href or request.path.startswith(href ~ "/") or (href == "/pipeline" and request.path.startswith("/opportunities")) %}
+                    {# EN: on phones, items after the 4th move into the "More" sheet
+                       PT: no celular, os itens depois do 4º vão para a folha "Mais" #}
+                    <li class="{{ 'app-nav-extra' if loop.index > 4 and nav_items | length > 5 else '' }}">
+                        <a class="app-nav-item" href="{{ href }}" {% if current %}aria-current="page"{% endif %}>
+                            <span aria-hidden="true" class="app-nav-ponteiro"></span>
+                            {{ icon(icon_name) }}
+                            <span>{{ t(key) }}</span>
+                            {% if href == "/tasks" and tasks_count %}<span class="contagem-nav" aria-label="{{ tasks_count }} {{ t('tasks.due_badge') }}">{{ tasks_count }}</span>{% endif %}
+                            {% if href == "/approvals" and approvals_count %}<span class="contagem-nav" aria-label="{{ approvals_count }} {{ t('approvals.waiting_suffix') }}">{{ approvals_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                {% endfor %}
+                {% if nav_items | length > 5 %}
+                    <li class="app-nav-mais">
+                        <details class="menu menu-mais">
+                            <summary class="app-nav-item">{{ icon("mais") }}<span>{{ t("nav.more") }}</span></summary>
+                            <div class="menu-painel">
+                                {% for href, icon_name, key in nav_items[4:] %}
+                                    <a class="menu-item menu-item-icone" href="{{ href }}">{{ icon(icon_name, 18) }}{{ t(key) }}{% if href == "/approvals" and approvals_count %} <span class="contagem-nav">{{ approvals_count }}</span>{% endif %}</a>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    </li>
+                {% endif %}
+            </ul>
+            <div class="app-conta">{{ account_controls() }}</div>
+        </nav>
+
+    {% else %}
+
+        <header class="app-topo-simples">
+            <a aria-label="SupplyFlow" class="app-marca" href="/">{% include "partials/logo.svg" %}</a>
+            <a class="botao botao-contorno botao-pequeno" href="/login">{{ t("nav.login") }}</a>
+        </header>
+
+    {% endif %}
+
+    <main class="app-principal" id="conteudo">
+
+        {# EN: Flash messages sent by the server | PT: Mensagens enviadas pelo servidor #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="avisos">
+                    {% for category, message in messages %}
+                        {% set kind = "erro" if category == "danger" else ("atencao" if category == "warning" else ("sucesso" if category == "success" else "info")) %}
+                        <div class="aviso aviso-{{ kind }}" role="{{ 'alert' if kind == 'erro' else 'status' }}">
+                            {{ icon("certo" if kind == "sucesso" else ("alerta" if kind in ("erro", "atencao") else "info"), 18) }}
+                            <p>{{ message }}</p>
+                            <button aria-label="{{ t('nav.close') }}" class="botao-icone aviso-fechar" data-fechar-aviso type="button">{{ icon("fechar", 16) }}</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block main %}{% endblock %}
+    </main>
+
+{% endblock %}

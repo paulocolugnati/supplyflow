@@ -1,0 +1,316 @@
+{#
+    EN: Staff home: four numbers on mechanical counters (open funnel, won this month, quotes
+        waiting for approval and for the customer), repurchase alerts with a rhythm lane,
+        my tasks for today, then plan usage (managers) and the discount ceilings.
+        A member sees only their own numbers (dashboard.py decides).
+    PT: Início da equipe: quatro números em contadores mecânicos (funil aberto, fechado no mês,
+        orçamentos esperando aprovação e o cliente), alertas de recompra com uma faixa de
+        ritmo, minhas tarefas de hoje, depois uso do plano (gerentes) e os tetos de desconto.
+        Um vendedor vê só os números dele (o dashboard.py decide).
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import task_row with context %}
+
+{% block title %}{{ t("dashboard.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ ws.workspace_name }}</h1>
+            <p class="subtitulo">{{ t("dashboard.plan") }} {{ ws.plan_name }} · {{ t("role." ~ ws.role) }}</p>
+        </div>
+        <div class="acoes-linha">
+            <a class="botao botao-faixa" href="/customers/new">{{ icon("adicionar", 18) }}{{ t("dashboard.new_customer") }}</a>
+            {% if ws.role in ("owner", "admin") %}
+                <a class="botao botao-contorno" href="/team">{{ icon("equipe", 18) }}{{ t("dashboard.invite_team") }}</a>
+            {% endif %}
+        </div>
+    </header>
+
+    {# EN: Accounts created before the company-data step: ask the owner to complete it
+       PT: Contas criadas antes do passo de dados da empresa: pede ao dono para completar #}
+    {% if ws.role == "owner" and not ws.workspace_cnpj %}
+        <div class="aviso aviso-info" role="status">{{ icon("info", 18) }}<p>{{ t("settings.complete_banner") }} <a href="/settings">{{ t("settings.title") }}</a></p></div>
+    {% endif %}
+
+    {# EN: The four numbers of the day; each one opens the list behind it
+       PT: Os quatro números do dia; cada um abre a lista por trás dele #}
+    <section aria-label="{{ t('dashboard.numbers') }}" class="numeros-painel">
+        <a class="numero-placa" href="/pipeline{{ '' if manager else '?owner=me' }}">
+            <span class="numero-rotulo">{{ t("dashboard.open_value") }}</span>
+            <b class="numero-valor"><span class="contador" data-contador-rolar>{{ open_deals.total | brl }}</span></b>
+            <small>{{ open_deals.n }} {{ t("dashboard.opportunity_one") if open_deals.n == 1 else t("dashboard.opportunities") }}</small>
+        </a>
+        <a class="numero-placa numero-ganho" href="/pipeline{{ '' if manager else '?owner=me' }}">
+            <span class="numero-rotulo">{{ t("dashboard.won_month") }}</span>
+            <b class="numero-valor"><span class="contador" data-contador-rolar>{{ won_month.total | brl }}</span></b>
+            <small>{{ won_month.n }} {{ t("dashboard.deal_won_one") if won_month.n == 1 else t("dashboard.deals_won") }}</small>
+            {% if won_manual.n %}<small class="numero-extra">+ {{ won_manual.total | brl }} {{ t("dashboard.won_manual") }} ({{ won_manual.n }})</small>{% endif %}
+        </a>
+        <a class="numero-placa{{ ' numero-alerta' if waiting_approval else '' }}" href="{{ '/approvals' if manager else '/quotes?status=pending_approval' }}">
+            <span class="numero-rotulo">{{ t("dashboard.waiting_approval") if manager else t("dashboard.my_waiting_approval") }}</span>
+            <b class="numero-valor"><span class="contador" data-contador-rolar>{{ waiting_approval }}</span></b>
+            <small>{{ t("dashboard.quote_one") if waiting_approval == 1 else t("dashboard.quotes") }}</small>
+        </a>
+        <a class="numero-placa" href="/quotes?status=sent">
+            <span class="numero-rotulo">{{ t("dashboard.waiting_customer") }}</span>
+            <b class="numero-valor"><span class="contador" data-contador-rolar>{{ waiting_customer }}</span></b>
+            <small>{{ t("dashboard.quote_sent_one") if waiting_customer == 1 else t("dashboard.quotes_sent") }}</small>
+        </a>
+    </section>
+
+    <div class="grade-equipe grade-painel">
+        {# EN: Repurchase alerts. The lane: solid = the customer's normal rhythm, hatched = days past it
+           PT: Alertas de recompra. A faixa: cheia = o ritmo normal do cliente, hachurada = dias além dele #}
+        <section aria-labelledby="recompra-titulo" class="chapa">
+            <div class="chapa-topo">
+                <div>
+                    <h2 class="titulo-secao" id="recompra-titulo">{{ t("dashboard.repurchase_title") }}{% if alerts %} <span class="contagem-grupo">{{ alerts | length }}</span>{% endif %}</h2>
+                    <p class="dica">{{ t("dashboard.repurchase_text") }}</p>
+                </div>
+            </div>
+            {% if alerts is none %}
+                <div class="bloqueado">
+                    <span class="tag-plano">{{ t("dashboard.not_in_plan") }}</span>
+                    <p>{{ t("dashboard.repurchase_locked") }}</p>
+                    {% set support = support_link(t("landing.support_message")) %}
+                    {% if support %}<a class="botao botao-contorno botao-pequeno" href="{{ support }}" rel="noopener" target="_blank">{{ icon("mensagem", 16) }}{{ t("dashboard.talk_support") }}</a>{% endif %}
+                </div>
+            {% elif alerts %}
+                <ul class="lista-recompra">
+                    {% for alert in alerts %}
+                        <li class="recompra">
+                            <div class="recompra-topo">
+                                <span class="contato-texto">
+                                    <a class="link-linha" href="/customers/{{ alert.id }}"><strong>{{ alert.name }}</strong></a>
+                                    <small>{{ t("dashboard.buys_every") }} {{ alert.average_days }} {{ t("dashboard.days") }} · {{ t("dashboard.last_order") }} {{ alert.last[8:10] }}/{{ alert.last[5:7] }}{% if manager and alert.owner_name %} · {{ alert.owner_name }}{% endif %}</small>
+                                </span>
+                                <span class="recompra-atraso">{{ alert.late_days }} {{ t("dashboard.days_late") }}</span>
+                                {% if alert.whatsapp %}
+                                    <a aria-label="WhatsApp: {{ alert.name }}" class="botao-icone" href="{{ alert.whatsapp }}" rel="noopener" target="_blank">{{ icon("mensagem", 18) }}</a>
+                                {% endif %}
+                            </div>
+                            <div aria-hidden="true" class="ritmo" style="--ritmo: {{ (alert.average_days / alert.days_since) | round(3) }}; --batente: {{ (alert.average_days * 1.5 / alert.days_since) | round(3) }};">
+                                <span class="ritmo-normal"></span>
+                                <span class="ritmo-batente"></span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="vazio-curto">{{ t("dashboard.repurchase_empty") }}</p>
+            {% endif %}
+        </section>
+
+        <div class="coluna-lateral">
+            <section aria-labelledby="hoje-titulo" class="chapa">
+                <div class="chapa-topo">
+                    <h2 class="titulo-secao" id="hoje-titulo">{{ t("dashboard.today_tasks") }}</h2>
+                    <a class="botao-texto" href="/tasks">{{ t("dashboard.see_all") }}</a>
+                </div>
+                {% if tasks %}
+                    <ul class="lista-tarefas">{% for task in tasks %}{{ task_row(task, "/dashboard") }}{% endfor %}</ul>
+                {% else %}
+                    <p class="dica">{{ t("dashboard.no_tasks_today") }}</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    {# EN: Plan usage: one floor-lane meter per quota; numbers roll in the mechanical counter
+       PT: Uso do plano: um medidor de faixa por cota; os números giram no contador mecânico #}
+    {# EN: Period report (reports.py). Bars are floor lanes in CSS (no chart library); each
+           number has its text right beside it, so nothing depends on reading a bar.
+       PT: Relatório do período (reports.py). As barras são faixas de piso em CSS (sem
+           biblioteca de gráfico); cada número tem o texto ao lado, então nada depende de ler uma barra. #}
+    {% set r = report.totals %}
+    <section aria-labelledby="relatorio-titulo" class="chapa relatorio">
+        <div class="chapa-topo">
+            <div>
+                <h2 class="titulo-secao" id="relatorio-titulo">{{ t("report.title") if manager else t("report.title_mine") }}</h2>
+                <p class="dica">{{ t("report.subtitle") }}</p>
+            </div>
+            <nav aria-label="{{ t('report.period') }}" class="periodos">
+                {% for code in periods %}
+                    <a {% if report.period == code %}aria-current="true"{% endif %} class="periodo" href="/dashboard?period={{ code }}#relatorio-titulo">{{ t("report.period_" ~ code) }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <dl class="resumo-periodo">
+            <div>
+                <dt>{{ t("report.sold") }}</dt>
+                <dd><b>{{ r.sold | brl }}</b>{% if r.manual %}<small>{{ t("report.incl_manual").replace("{value}", r.manual | brl) }}</small>{% endif %}</dd>
+            </div>
+            <div><dt>{{ t("report.orders") }}</dt><dd><b>{{ r.orders | num }}</b></dd></div>
+            <div><dt>{{ t("report.ticket") }}</dt><dd><b>{{ r.ticket | brl }}</b></dd></div>
+            <div>
+                <dt>{{ t("report.conversion") }}</dt>
+                <dd><b>{{ r.conversion_bps | pct if r.conversion_bps is not none else "—" }}</b><small>{{ t("report.conversion_note").replace("{n}", r.sent | string) }}</small></dd>
+            </div>
+            <div><dt>{{ t("report.avg_discount") }}</dt><dd><b>{{ r.avg_discount_bps | pct if r.avg_discount_bps is not none else "—" }}</b></dd></div>
+            {% if not manager %}
+                {% set mine = report.sellers[0] if report.sellers else none %}
+                <div class="resumo-comissao">
+                    <dt>{{ t("report.my_commission") }} ({{ my_commission | pct }})</dt>
+                    <dd><b>{{ (mine.commission if mine else 0) | brl }}</b></dd>
+                </div>
+            {% endif %}
+        </dl>
+
+        <div class="relatorio-grade">
+            {% if manager %}
+                <section aria-labelledby="ranking-titulo" class="relatorio-bloco relatorio-largo">
+                    <h3 class="titulo-bloco" id="ranking-titulo">{{ t("report.sellers") }}</h3>
+                    {% if report.sellers %}
+                        <div class="tabela-rolagem">
+                            <table class="tabela tabela-ranking">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">{{ t("report.seller") }}</th>
+                                        <th scope="col">{{ t("report.sold") }}</th>
+                                        <th class="num" scope="col">{{ t("report.orders") }}</th>
+                                        <th class="num" scope="col">{{ t("report.ticket") }}</th>
+                                        <th class="num" scope="col">{{ t("report.avg_discount") }}</th>
+                                        <th class="num" scope="col">{{ t("report.commission") }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in report.sellers %}
+                                        <tr>
+                                            <th scope="row">{{ s.name or t("report.no_seller") }}</th>
+                                            <td>
+                                                <span class="barra-valor"><b>{{ s.sold | brl }}</b><span aria-hidden="true" class="barra" style="--parte: {{ s.share }}"></span></span>
+                                                {% if s.manual %}<small class="celula-sub">{{ t("report.incl_manual").replace("{value}", s.manual | brl) }}</small>{% endif %}
+                                            </td>
+                                            <td class="num">{{ s.orders }}</td>
+                                            <td class="num">{{ s.ticket | brl }}</td>
+                                            <td class="num">{{ s.avg_discount_bps | pct if s.avg_discount_bps is not none else "—" }}</td>
+                                            <td class="num">{{ s.commission | brl }}<small class="celula-sub">{{ s.commission_bps | pct }}</small></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if membership.role == "owner" %}<p class="dica">{{ t("report.commission_hint") }} <a href="/team">{{ t("nav.team") }}</a></p>{% endif %}
+                    {% else %}
+                        <p class="vazio-curto">{{ t("report.no_sales") }}</p>
+                    {% endif %}
+                </section>
+            {% endif %}
+
+            <section aria-labelledby="clientes-top-titulo" class="relatorio-bloco">
+                <h3 class="titulo-bloco" id="clientes-top-titulo">{{ t("report.customers") }}</h3>
+                {% if report.customers %}
+                    <ol class="lista-barras">
+                        {% for c in report.customers %}
+                            <li>
+                                <span class="lista-barras-topo"><a class="link-linha" href="/customers/{{ c.company_id }}">{{ c.name }}</a><b>{{ c.total | brl }}</b></span>
+                                <span aria-hidden="true" class="barra" style="--parte: {{ c.share }}"></span>
+                                <small>{{ c.orders }} {{ t("report.orders_lower") }} · {{ t("report.last") }} {{ c.last | local_time }}</small>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="vazio-curto">{{ t("report.no_sales") }}</p>
+                {% endif %}
+            </section>
+
+            <section aria-labelledby="perdas-titulo" class="relatorio-bloco">
+                <h3 class="titulo-bloco" id="perdas-titulo">{{ t("report.losses") }}</h3>
+                {% if report.losses %}
+                    <ol class="lista-barras lista-perdas">
+                        {% for loss in report.losses %}
+                            <li>
+                                <span class="lista-barras-topo"><span>{{ loss.reason or t("report.no_reason") }}</span><b>{{ loss.n }}</b></span>
+                                <span aria-hidden="true" class="barra barra-perda" style="--parte: {{ loss.share }}"></span>
+                                <small>{{ loss.total | brl }} {{ t("report.lost_value") }}</small>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="vazio-curto">{{ t("report.no_losses") }}</p>
+                {% endif %}
+            </section>
+
+            {% if overdue is not none %}
+                <section aria-labelledby="atrasadas-titulo" class="relatorio-bloco">
+                    <h3 class="titulo-bloco" id="atrasadas-titulo">{{ t("report.team_overdue") }}</h3>
+                    {% if overdue %}
+                        <ul class="lista-contatos">
+                            {% for o in overdue %}
+                                <li><span class="contato-texto"><strong>{{ o.name }}</strong><small>{{ t("report.oldest") }} {{ o.oldest[8:10] }}/{{ o.oldest[5:7] }}</small></span><span class="recompra-atraso">{{ o.n }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        <a class="botao-texto" href="/tasks?scope=team">{{ t("tasks.see_team") }}</a>
+                    {% else %}
+                        <p class="vazio-curto">{{ t("report.no_overdue") }}</p>
+                    {% endif %}
+                </section>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if usage %}
+    <section aria-labelledby="uso-titulo" class="chapa">
+        <div class="chapa-topo">
+            <h2 class="titulo-secao" id="uso-titulo">{{ t("usage.title") }}</h2>
+            <a class="botao-texto" href="/plans">{{ t("plans.see_plans") }}</a>
+        </div>
+        <div class="medidores">
+            {% for item in usage %}
+                {% set state = "ilimitado" if item.limit is none else ("cheio" if item.percent >= 100 else ("quase" if item.percent >= 80 else "")) %}
+                <div class="medidor medidor-{{ state or 'normal' }}" style="--uso: {{ (item.percent or 0) / 100 }}">
+                    <div class="medidor-topo">
+                        <span class="medidor-rotulo">{{ t("usage." ~ item.resource) }}</span>
+                        <span class="medidor-valor">
+                            <span class="contador" data-contador-rolar>{{ item.used | num }}</span>
+                            <span class="medidor-limite">/ {{ item.limit | num if item.limit is not none else t("usage.unlimited") }}</span>
+                        </span>
+                    </div>
+                    <div aria-hidden="true" class="medidor-faixa"><span></span></div>
+                    {% if state == "cheio" %}
+                        <p class="medidor-nota">{{ t("usage.full") }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% endif %}
+
+    {# EN: The workspace's real ceilings on the ruler | PT: Os tetos reais da distribuidora na régua #}
+    {% set admin_bps = ws.admin_discount_limit_bps %}
+    {% set escala = 20 if admin_bps <= 1500 else ((admin_bps // 500) + 1) * 5 %}
+    <section aria-labelledby="tetos-titulo" class="chapa">
+        <div class="chapa-topo">
+            <div>
+                <h2 class="titulo-secao" id="tetos-titulo">{{ t("dashboard.ceilings_title") }}</h2>
+                <p class="dica">{{ t("dashboard.ceilings_text") }}</p>
+            </div>
+            {% if ws.role == "owner" %}
+                <a class="botao botao-contorno botao-pequeno" href="/onboarding/limits">{{ icon("regua", 18) }}{{ t("dashboard.adjust") }}</a>
+            {% endif %}
+        </div>
+        <figure aria-label="{{ t('dashboard.ceilings_title') }}: {{ t('landing.stop_seller') }} {{ ws.member_discount_limit_bps | pct }}, {{ t('landing.stop_manager') }} {{ admin_bps | pct }}" class="regua regua-dinamica regua-painel-app" style="--escala: {{ escala }}; --vendedor: {{ ws.member_discount_limit_bps / 100 }}; --gerente: {{ admin_bps / 100 }};">
+            <div aria-hidden="true" class="regua-corpo">
+                <span class="regua-zona zona-gerente"></span>
+                <span class="regua-zona zona-dono"></span>
+                <span class="regua-batente batente-vendedor"></span>
+                <span class="regua-batente batente-gerente"></span>
+            </div>
+            <figcaption class="regua-legenda">
+                <span class="legenda-vendedor">{{ t("landing.stop_seller") }} <b>{{ ws.member_discount_limit_bps | pct }}</b></span>
+                <span class="legenda-gerente">{{ t("landing.stop_manager") }} <b>{{ admin_bps | pct }}</b></span>
+            </figcaption>
+        </figure>
+        <p class="linha-dado">
+            <span>{{ t("onboarding.min_margin") }}</span>
+            <b>{{ ws.min_margin_bps | pct }}</b>
+            {% if not ws.feat_min_margin %}<span class="tag-plano">{{ t("dashboard.not_in_plan") }}</span>{% endif %}
+        </p>
+    </section>
+
+{% endblock %}

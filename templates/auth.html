@@ -1,0 +1,56 @@
+{#
+    EN: Split shell for login, sign-up, invites and onboarding: the form on one side, a petroleum
+        plate on the other carrying a small discount ruler (continuity with the landing page).
+        Pages fill "form" and may replace "panel". On phones only the form is shown.
+    PT: Casca dividida para login, cadastro, convites e onboarding: o formulário de um lado, uma
+        chapa petróleo do outro com uma régua de desconto pequena (continuidade com a página
+        inicial). As páginas preenchem "form" e podem trocar o "panel". No celular só o formulário aparece.
+#}
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block body_class %}acesso{% endblock %}
+
+{% block body %}
+    <div class="acesso-grade">
+
+        <main class="acesso-lado-form" id="conteudo">
+            <header class="acesso-topo">
+                <a aria-label="SupplyFlow" class="app-marca" href="/">{% include "partials/logo.svg" %}</a>
+                <div class="acesso-controles">
+                    <a aria-label="{{ t('nav.language') }}" class="botao-icone botao-idioma" href="/lang/{{ 'en' if lang == 'pt' else 'pt' }}?next={{ request.full_path | urlencode }}">{{ "EN" if lang == "pt" else "PT" }}</a>
+                    <button aria-label="{{ t('landing.theme_toggle') }}" aria-pressed="{{ 'true' if theme == 'light' else 'false' }}" class="botao-icone" data-tema-botao type="button">{{ icon("tema", 18) }}</button>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="aviso aviso-{{ 'erro' if category == 'danger' else 'info' }}" role="status">{{ icon("info", 18) }}<p>{{ message }}</p></div>
+                {% endfor %}
+            {% endwith %}
+
+            <div class="acesso-form">
+                {% block form %}{% endblock %}
+            </div>
+        </main>
+
+        <aside aria-hidden="true" class="acesso-painel">
+            {% block panel %}
+                <p class="acesso-frase">{{ t("landing.hero_line1") }}<br>{{ t("landing.hero_line2") }}</p>
+                <div class="regua regua-dinamica regua-painel" style="--escala: 20; --vendedor: 5; --gerente: 15;">
+                    <div class="regua-corpo">
+                        <span class="regua-zona zona-gerente"></span>
+                        <span class="regua-zona zona-dono"></span>
+                        <span class="regua-batente batente-vendedor"></span>
+                        <span class="regua-batente batente-gerente"></span>
+                    </div>
+                    <div class="regua-legenda">
+                        <span class="legenda-vendedor">{{ t("landing.stop_seller") }} <b>5%</b></span>
+                        <span class="legenda-gerente">{{ t("landing.stop_manager") }} <b>15%</b></span>
+                    </div>
+                </div>
+            {% endblock %}
+        </aside>
+
+    </div>
+{% endblock %}

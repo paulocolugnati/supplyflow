@@ -1,0 +1,111 @@
+{#
+    EN: Customer list. Search and filters are a GET form, so a filtered list has its own URL
+        (it can be bookmarked or shared) and the back button works.
+    PT: Lista de clientes. Busca e filtros são um formulário GET, então uma lista filtrada tem
+        o próprio endereço (dá para salvar ou compartilhar) e o botão voltar funciona.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import export_button with context %}
+
+{% block title %}{{ t("customers.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("customers.title") }}</h1>
+            <p class="subtitulo">{{ total }} {{ t("customers.count_suffix") }}</p>
+        </div>
+        <div class="acoes-linha">
+            {{ export_button("customers") }}
+            {% if can_add %}
+                <a class="botao botao-faixa" href="/customers/new">{{ icon("adicionar", 18) }}{{ t("customers.new") }}</a>
+            {% else %}
+                <span class="tag-plano">{{ t("customers.quota_short") }}</span>
+            {% endif %}
+        </div>
+    </header>
+
+    {# EN: Filters | PT: Filtros #}
+    <form action="/customers" class="filtros" method="get" role="search">
+        <div class="campo campo-busca">
+            <label class="sr-only" for="q">{{ t("customers.search") }}</label>
+            {{ icon("busca", 18) }}
+            <input id="q" maxlength="100" name="q" placeholder="{{ t('customers.search_placeholder') }}" type="search" value="{{ filters.q }}">
+        </div>
+        <div class="campo">
+            <label class="sr-only" for="segment">{{ t("customers.segment") }}</label>
+            <select id="segment" name="segment">
+                <option value="">{{ t("customers.all_segments") }}</option>
+                {% for segment in segments %}
+                    <option {% if filters.segment == segment %}selected{% endif %} value="{{ segment }}">{{ segment }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label class="sr-only" for="owner">{{ t("customers.owner") }}</label>
+            <select id="owner" name="owner">
+                <option value="">{{ t("customers.all_owners") }}</option>
+                <option {% if filters.owner == "me" %}selected{% endif %} value="me">{{ t("customers.mine") }}</option>
+                {% for person in staff %}
+                    <option {% if filters.owner == person.id | string %}selected{% endif %} value="{{ person.id }}">{{ person.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="botao botao-contorno" type="submit">{{ t("customers.filter") }}</button>
+        {% if filters.q or filters.segment or filters.owner %}
+            <a class="botao-texto" href="/customers">{{ t("customers.clear") }}</a>
+        {% endif %}
+    </form>
+
+    {% if customers %}
+        <section class="chapa chapa-tabela">
+            <table class="tabela tabela-clientes">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ t("customers.col_customer") }}</th>
+                        <th scope="col">{{ t("customers.segment") }}</th>
+                        <th scope="col">{{ t("customers.owner") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("customers.col_contacts") }}</th>
+                        <th class="coluna-acao" scope="col"><span class="sr-only">WhatsApp</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                        <tr>
+                            <td>
+                                <a class="link-linha" href="/customers/{{ c.id }}"><strong>{{ c.name }}</strong></a>
+                                {% if c.brought_count %}<span class="tag-trazido">{{ t("buyers.brought") }}</span>{% endif %}
+                                <small class="celula-sub">{{ c.city or "" }}{% if c.city and c.cnpj %} · {% endif %}{{ c.cnpj | cnpj }}</small>
+                            </td>
+                            <td>{% if c.segment %}<span class="tag-segmento">{{ c.segment }}</span>{% else %}<span class="celula-sub">—</span>{% endif %}</td>
+                            <td>{{ c.owner_name or "—" }}{% if c.owner_id == current_user.id %} <span class="tag-voce">{{ t("team.you") }}</span>{% endif %}</td>
+                            <td class="coluna-numero">{{ c.contact_count }}</td>
+                            <td class="coluna-acao">
+                                {% if c.whatsapp %}
+                                    <a aria-label="WhatsApp {{ c.name }}" class="botao-icone" href="{{ c.whatsapp }}" rel="noopener" target="_blank" title="WhatsApp">{{ icon("mensagem", 18) }}</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% elif total == 0 %}
+        {# EN: First-run empty state: what a customer is and the one action to take
+           PT: Estado vazio da primeira vez: o que é um cliente e a única ação a tomar #}
+        <section class="vazio chapa">
+            <span aria-hidden="true" class="vazio-faixa"></span>
+            <h2 class="titulo-secao">{{ t("customers.empty_title") }}</h2>
+            <p>{{ t("customers.empty_text") }}</p>
+            {% if can_add %}<a class="botao botao-faixa" href="/customers/new">{{ icon("adicionar", 18) }}{{ t("customers.new") }}</a>{% endif %}
+        </section>
+    {% else %}
+        <section class="vazio chapa">
+            <h2 class="titulo-secao">{{ t("customers.no_results") }}</h2>
+            <a class="botao botao-contorno" href="/customers">{{ t("customers.clear") }}</a>
+        </section>
+    {% endif %}
+
+{% endblock %}

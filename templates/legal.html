@@ -1,0 +1,48 @@
+{#
+    EN: Terms of use and Privacy policy (app.py: /terms and /privacy). Plain language, honest
+        about what this is: a student project (CS50x final project), with no online payment
+        yet. The text lives in translations.py ("terms.*" and "privacy.*"), so PT and EN stay
+        in sync; `sections` lists how many numbered sections the page has.
+    PT: Termos de uso e Política de privacidade (app.py: /terms e /privacy). Linguagem simples,
+        honesta sobre o que isto é: um projeto de estudante (projeto final do CS50x), ainda
+        sem pagamento online. O texto fica no translations.py ("terms.*" e "privacy.*"), para
+        PT e EN andarem juntos; `sections` diz quantas seções numeradas a página tem.
+#}
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t(kind ~ ".title") }} · SupplyFlow{% endblock %}
+{% block body_class %}pagina-legal{% endblock %}
+
+{% block body %}
+    <header class="legal-topo">
+        <a aria-label="SupplyFlow" class="app-marca" href="/">{% include "partials/logo.svg" %}</a>
+        <nav aria-label="{{ t('legal.nav') }}" class="legal-links">
+            <a {% if kind == "terms" %}aria-current="page"{% endif %} href="/terms">{{ t("terms.title") }}</a>
+            <a {% if kind == "privacy" %}aria-current="page"{% endif %} href="/privacy">{{ t("privacy.title") }}</a>
+            <a class="botao-icone botao-idioma" href="/lang/{{ 'en' if lang == 'pt' else 'pt' }}?next={{ request.path | urlencode }}">{{ "EN" if lang == "pt" else "PT" }}</a>
+        </nav>
+    </header>
+
+    <main class="legal" id="conteudo">
+        <span aria-hidden="true" class="legal-faixa"></span>
+        <h1 class="titulo-pagina">{{ t(kind ~ ".title") }}</h1>
+        <p class="legal-data">{{ t("legal.updated") }}</p>
+        <p class="legal-intro">{{ t(kind ~ ".intro") }}</p>
+
+        <ol class="legal-secoes">
+            {% for n in range(1, sections + 1) %}
+                <li>
+                    <h2>{{ t(kind ~ ".s" ~ n ~ "_title") }}</h2>
+                    <p>{{ t(kind ~ ".s" ~ n ~ "_text") }}</p>
+                </li>
+            {% endfor %}
+        </ol>
+
+        <p class="legal-contato">
+            {{ t("legal.contact") }}
+            {% if support %}<a href="{{ support }}" rel="noopener" target="_blank">{{ t("landing.talk_support") }}</a>{% endif %}
+        </p>
+        <p><a href="/">← {{ t("legal.back_home") }}</a></p>
+    </main>
+{% endblock %}

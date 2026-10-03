@@ -1,0 +1,107 @@
+{#
+    EN: Platform panel (admin_panel.py), for the SupplyFlow operator only. Totals, workspaces
+        per plan, and one row per workspace with owners, usage (over the limit = hatched) and a
+        small form to change plan and negotiated price. No business data here.
+    PT: Painel da plataforma (admin_panel.py), só para quem opera o SupplyFlow. Totais,
+        distribuidoras por plano e uma linha por distribuidora com donos, uso (acima do
+        limite = hachurado) e um formulário pequeno para trocar plano e preço negociado.
+        Nenhum dado de negócio aqui.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("platform.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("platform.title") }}</h1>
+            <p class="subtitulo">{{ t("platform.subtitle") }}</p>
+        </div>
+    </header>
+
+    <section aria-label="{{ t('platform.totals') }}" class="numeros-painel">
+        {% for key in ("workspaces", "staff", "buyers") %}
+            <div class="numero-placa">
+                <span class="numero-rotulo">{{ t("platform.total_" ~ key) }}</span>
+                <b class="numero-valor"><span class="contador" data-contador-rolar>{{ totals[key] }}</span></b>
+            </div>
+        {% endfor %}
+        <div class="numero-placa">
+            <span class="numero-rotulo">{{ t("platform.per_plan") }}</span>
+            <ul class="lista-por-plano">
+                {% for p in per_plan %}<li><span>{{ p.name }}</span><b>{{ p.n }}</b></li>{% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    <section aria-labelledby="distribuidoras-titulo" class="chapa">
+        <div class="chapa-topo">
+            <h2 class="titulo-secao" id="distribuidoras-titulo">{{ t("platform.workspaces") }}</h2>
+            <form action="/platform" class="busca-linha" method="get" role="search">
+                <label class="sr-only" for="busca-ws">{{ t("platform.search") }}</label>
+                <input id="busca-ws" maxlength="80" name="q" placeholder="{{ t('platform.search') }}" type="search" value="{{ search }}">
+                <button class="botao botao-contorno botao-pequeno" type="submit">{{ icon("busca", 16) }}{{ t("platform.search_button") }}</button>
+            </form>
+        </div>
+
+        {% if workspaces %}
+            <ul class="lista-plataforma">
+                {% for w in workspaces %}
+                    <li class="plataforma-item">
+                        <div class="plataforma-cabeca">
+                            <span class="contato-texto">
+                                <strong>{{ w.workspace_name }}</strong>
+                                <small>{{ w.owners or "—" }}</small>
+                                <small>{{ t("platform.created") }} {{ w.created_at | local_time }} · {{ w.buyers }} {{ t("platform.buyer_links") }} · {{ w.referred }} {{ t("platform.referred") }}</small>
+                            </span>
+                            <span class="plataforma-plano">
+                                <span class="etiqueta-endereco">{{ w.plan_name }}</span>
+                                <b>{{ w.price_cents | brl }}</b>{% if w.custom_price_cents is not none %} <span class="tag-plano">{{ t("plans.negotiated") }}</span>{% endif %}
+                            </span>
+                        </div>
+                        <dl class="plataforma-uso">
+                            {% for item in w.usage %}
+                                <div class="{{ 'uso-acima' if item.over else '' }}">
+                                    <dt>{{ t("usage." ~ item.resource) }}</dt>
+                                    <dd>{{ item.used | num }} / {{ item.limit | num if item.limit is not none else "∞" }}{% if item.over %} <span class="sr-only">{{ t("platform.over") }}</span>{% endif %}</dd>
+                                </div>
+                            {% endfor %}
+                        </dl>
+                        <form action="/platform/workspaces/{{ w.workspace_id }}" class="plataforma-form" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <div class="campo">
+                                <label for="plano-{{ w.workspace_id }}">{{ t("platform.plan") }}</label>
+                                <select id="plano-{{ w.workspace_id }}" name="plan">
+                                    {% for p in plans %}<option {% if p.code == w.code %}selected{% endif %} value="{{ p.code }}">{{ p.name }} ({{ p.price_cents | brl }})</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label for="preco-{{ w.workspace_id }}">{{ t("platform.custom_price") }}</label>
+                                <input id="preco-{{ w.workspace_id }}" inputmode="decimal" maxlength="16" name="custom_price" placeholder="{{ t('platform.list_price') }}" type="text" value="{{ money_input(w.custom_price_cents) }}">
+                            </div>
+                            <button class="botao botao-contorno botao-pequeno" type="submit">{{ t("platform.save") }}</button>
+                        </form>
+                        {# EN: Name and CNPJ: only support changes them | PT: Nome e CNPJ: só o suporte muda #}
+                        <form action="/platform/workspaces/{{ w.workspace_id }}/identity" class="plataforma-form" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <div class="campo">
+                                <label for="nome-{{ w.workspace_id }}">{{ t("settings.name") }}</label>
+                                <input id="nome-{{ w.workspace_id }}" maxlength="100" name="name" required type="text" value="{{ w.workspace_name }}">
+                            </div>
+                            <div class="campo">
+                                <label for="cnpj-{{ w.workspace_id }}">{{ t("customers.cnpj") }}</label>
+                                <input id="cnpj-{{ w.workspace_id }}" inputmode="numeric" maxlength="18" name="cnpj" type="text" value="{{ w.workspace_cnpj | cnpj if w.workspace_cnpj else '' }}">
+                            </div>
+                            <button class="botao botao-contorno botao-pequeno" type="submit">{{ t("platform.save_identity") }}</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="vazio-curto">{{ t("platform.none") }}</p>
+        {% endif %}
+    </section>
+
+{% endblock %}

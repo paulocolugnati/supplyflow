@@ -1,0 +1,112 @@
+{#
+    EN: Pipeline settings (admins and owners): rename, reorder, add and delete stages; extra
+        pipelines only when the plan allows. The server refuses deleting a stage in use or the
+        last won/lost stage; the buttons here only show what can be tried.
+    PT: Configuração do funil (admins e owners): renomear, reordenar, adicionar e apagar
+        etapas; funis extras só quando o plano permite. O servidor recusa apagar etapa em uso
+        ou a última etapa won/lost; os botões aqui só mostram o que pode ser tentado.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("pipeline.settings") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("pipeline.settings") }}</h1>
+            <p class="subtitulo"><a href="/pipeline">{{ t("pipeline.back_board") }}</a></p>
+        </div>
+    </header>
+
+    <p class="dica bloco-dica">{{ t("pipeline.kinds_help") }}</p>
+
+    {% for item in data %}
+        {% set pipeline = item.pipeline %}
+        <section aria-labelledby="funil-{{ pipeline.id }}" class="chapa">
+            <div class="chapa-topo">
+                <form action="/pipelines/{{ pipeline.id }}/rename" class="renomear" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <label class="sr-only" for="nome-funil-{{ pipeline.id }}">{{ t("pipeline.pipeline_name") }}</label>
+                    <input class="titulo-secao entrada-titulo" id="nome-funil-{{ pipeline.id }}" maxlength="40" name="name" type="text" value="{{ pipeline.name }}">
+                    <button class="botao-texto" type="submit">{{ t("customers.save") }}</button>
+                </form>
+                <h2 class="sr-only" id="funil-{{ pipeline.id }}">{{ pipeline.name }}</h2>
+                {% if not pipeline.is_default %}
+                    <form action="/pipelines/{{ pipeline.id }}/delete" data-confirm="{{ t('pipeline.confirm_delete_pipeline') }}" method="post">
+                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                        <button class="botao-texto botao-perigo" type="submit">{{ t("pipeline.delete_pipeline") }}</button>
+                    </form>
+                {% else %}
+                    <span class="tag-plano">{{ t("pipeline.default") }}</span>
+                {% endif %}
+            </div>
+
+            <ol class="lista-etapas">
+                {% for stage in item.stages %}
+                    <li>
+                        <span aria-hidden="true" class="etapa-linha etapa-{{ stage.kind }}"></span>
+                        <form action="/stages/{{ stage.id }}/rename" class="renomear" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <label class="sr-only" for="etapa-nome-{{ stage.id }}">{{ t("pipeline.stage_name") }}</label>
+                            <input id="etapa-nome-{{ stage.id }}" maxlength="40" name="name" type="text" value="{{ stage.name }}">
+                            <button class="botao-texto" type="submit">{{ t("customers.save") }}</button>
+                        </form>
+                        <span class="tag-tipo tag-{{ stage.kind }}">{{ t("pipeline.kind_" ~ stage.kind) }}</span>
+                        <span class="etapa-uso">{{ stage.in_use }} {{ t("pipeline.in_use") }}</span>
+                        <div class="etapa-acoes">
+                            {% for direction in ("up", "down") %}
+                                <form action="/stages/{{ stage.id }}/move" method="post">
+                                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                    <input name="direction" type="hidden" value="{{ direction }}">
+                                    <button aria-label="{{ t('pipeline.move_' ~ direction) }} {{ stage.name }}" class="botao-icone botao-mini" type="submit">
+                                        <svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" viewBox="0 0 24 24" width="16">{% if direction == "up" %}<path d="M12 19V5M6 11l6-6 6 6"/>{% else %}<path d="M12 5v14M6 13l6 6 6-6"/>{% endif %}</svg>
+                                    </button>
+                                </form>
+                            {% endfor %}
+                            <form action="/stages/{{ stage.id }}/delete" data-confirm="{{ t('pipeline.confirm_delete_stage') }}" method="post">
+                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                <button aria-label="{{ t('customers.delete') }} {{ stage.name }}" class="botao-icone botao-mini botao-perigo" type="submit">{{ icon("fechar", 16) }}</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+
+            {# EN: Add stage | PT: Adicionar etapa #}
+            <form action="/pipeline/{{ pipeline.id }}/stages" class="adicionar-etapa" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <div class="campo">
+                    <label for="nova-etapa-{{ pipeline.id }}">{{ t("pipeline.new_stage") }}</label>
+                    <input id="nova-etapa-{{ pipeline.id }}" maxlength="40" name="name" placeholder="{{ t('pipeline.stage_placeholder') }}" required type="text">
+                </div>
+                <div class="campo">
+                    <label for="tipo-etapa-{{ pipeline.id }}">{{ t("pipeline.kind") }}</label>
+                    <select id="tipo-etapa-{{ pipeline.id }}" name="kind">
+                        {% for kind in ("open", "won", "lost") %}<option value="{{ kind }}">{{ t("pipeline.kind_" ~ kind) }}</option>{% endfor %}
+                    </select>
+                </div>
+                <button class="botao botao-contorno" type="submit">{{ icon("adicionar", 18) }}{{ t("pipeline.add_stage") }}</button>
+            </form>
+        </section>
+    {% endfor %}
+
+    {# EN: Extra pipelines (plan feature) | PT: Funis extras (recurso do plano) #}
+    <section class="chapa">
+        <h2 class="titulo-secao">{{ t("pipeline.new_pipeline") }}</h2>
+        {% if can_add_pipeline %}
+            <form action="/pipelines" class="adicionar-etapa" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <div class="campo">
+                    <label for="novo-funil">{{ t("pipeline.pipeline_name") }}</label>
+                    <input id="novo-funil" maxlength="40" name="name" placeholder="{{ t('pipeline.pipeline_placeholder') }}" required type="text">
+                </div>
+                <button class="botao botao-contorno" type="submit">{{ icon("adicionar", 18) }}{{ t("pipeline.add_pipeline") }}</button>
+            </form>
+        {% else %}
+            <p class="dica">{{ t("pipeline.multi_locked") }}</p>
+        {% endif %}
+    </section>
+
+{% endblock %}

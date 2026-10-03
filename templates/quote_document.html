@@ -1,0 +1,126 @@
+{#
+    EN: The quote as an A4 document for the customer (documents.py). On screen: a toolbar
+        (back + "Download PDF") over the sheet. On print / "Save as PDF": only the sheet.
+        Texts come from d() = always Portuguese. Never shows cost, margin or internal notes.
+    PT: O orçamento como documento A4 para o cliente (documents.py). Na tela: uma barra
+        (voltar + "Baixar PDF") sobre a folha. Na impressão / "Salvar como PDF": só a folha.
+        Os textos vêm de d() = sempre português. Nunca mostra custo, margem ou notas internas.
+#}
+<!DOCTYPE html>
+<html data-theme="light" lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="noindex" name="robots">
+    <title>{{ file_name }}</title>
+    <link href="/static/brand/simbolo.svg" rel="icon" type="image/svg+xml">
+    <link href="/static/sf-base.css" rel="stylesheet">
+    <link href="/static/document.css" rel="stylesheet">
+    <script defer src="/static/sf.js"></script>
+</head>
+<body class="documento-pagina">
+
+    <div class="documento-barra">
+        <a class="botao botao-contorno botao-pequeno" href="{{ back_url }}">← {{ d("doc.back") }}</a>
+        <div class="documento-barra-acao">
+            <button class="botao botao-faixa" data-imprimir type="button">{{ d("doc.download") }}</button>
+            <small>{{ d("doc.download_hint") }}</small>
+        </div>
+    </div>
+
+    <main class="folha">
+        <span aria-hidden="true" class="folha-faixa"></span>
+
+        <header class="folha-topo">
+            <div class="folha-emissor">
+                {% if workspace.logo_path %}
+                    <img alt="{{ workspace.name }}" class="folha-logo" src="{{ workspace.logo_path }}">
+                {% endif %}
+                <strong class="folha-empresa">{{ workspace.name }}</strong>
+                <span>
+                    {% if workspace.cnpj %}{{ d("doc.cnpj") }} {{ workspace.cnpj | cnpj }}{% endif %}
+                    {% if workspace.city %} · {{ workspace.city }}{% endif %}
+                </span>
+                <span>
+                    {% if workspace.phone %}{{ d("doc.whatsapp") }} {{ workspace.phone | phone }}{% endif %}
+                    {% if workspace.email %} · {{ workspace.email }}{% endif %}
+                </span>
+            </div>
+            <div class="folha-numero">
+                <h1>{{ d("doc.title") }} <span>nº {{ number }}</span></h1>
+                <span>{{ d("doc.issued") }} {{ (quote.sent_at or quote.created_at) | local_time }}</span>
+                <span class="folha-validade">{{ d("doc.valid_until") }} {{ quote.valid_until[8:10] }}/{{ quote.valid_until[5:7] }}/{{ quote.valid_until[0:4] }}</span>
+            </div>
+        </header>
+
+        {% if banner %}
+            <p class="folha-aviso" role="note">{{ d(banner) }}</p>
+        {% endif %}
+
+        <section class="folha-partes">
+            <div>
+                <span class="folha-rotulo">{{ d("doc.customer") }}</span>
+                <strong>{{ customer.name }}</strong>
+                {% if customer.cnpj %}<span>{{ d("doc.cnpj") }} {{ customer.cnpj | cnpj }}</span>{% endif %}
+                {% if customer.city %}<span>{{ customer.city }}</span>{% endif %}
+                {% if contact %}<span>{{ d("doc.attention") }} {{ contact }}</span>{% endif %}
+            </div>
+            {% if seller %}
+                <div>
+                    <span class="folha-rotulo">{{ d("doc.seller") }}</span>
+                    <strong>{{ seller.name }}</strong>
+                    <span>{{ seller.email }}</span>
+                </div>
+            {% endif %}
+        </section>
+
+        <div class="folha-tabela">
+        <table class="folha-itens">
+            <thead>
+                <tr>
+                    <th scope="col">{{ d("doc.product") }}</th>
+                    <th class="num" scope="col">{{ d("doc.quantity") }}</th>
+                    <th class="num" scope="col">{{ d("doc.unit_price") }}</th>
+                    <th class="num" scope="col">{{ d("doc.discount") }}</th>
+                    <th class="num" scope="col">{{ d("doc.line_total") }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td class="num">{{ item.quantity | num }} {{ item.unit }}</td>
+                        <td class="num">{{ item.list_price_cents | brl }}</td>
+                        <td class="num">{{ item.discount_bps | pct if item.discount_bps else "—" }}</td>
+                        <td class="num">{{ item.line_total_cents | brl }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td class="folha-vazio" colspan="5">{{ d("doc.no_items") }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        <section class="folha-rodape-valores">
+            <div class="folha-notas">
+                {% if quote.notes_customer %}
+                    <span class="folha-rotulo">{{ d("doc.notes") }}</span>
+                    <p>{{ quote.notes_customer }}</p>
+                {% endif %}
+            </div>
+            <dl class="folha-totais">
+                <div><dt>{{ d("doc.list_total") }}</dt><dd>{{ quote.list_total_cents | brl }}</dd></div>
+                {% if quote.header_discount_bps %}<div><dt>{{ d("doc.header_discount") }}</dt><dd>{{ quote.header_discount_bps | pct }}</dd></div>{% endif %}
+                {% if discount_cents > 0 %}<div><dt>{{ d("doc.savings") }}</dt><dd>− {{ discount_cents | brl }}</dd></div>{% endif %}
+                <div class="folha-total"><dt>{{ d("doc.total") }}</dt><dd>{{ quote.final_total_cents | brl }}</dd></div>
+            </dl>
+        </section>
+
+        <footer class="folha-fim">
+            <span>{{ d("doc.footer").replace("{date}", quote.valid_until[8:10] ~ "/" ~ quote.valid_until[5:7] ~ "/" ~ quote.valid_until[0:4]) }}</span>
+            <span>{{ d("doc.made_with") }}</span>
+        </footer>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,1335 @@
+/*
+ * EN: Landing page — "Piso do Galpão" (warehouse floor) world.
+ *     Petroleum epoxy floor, one aqua floor lane with a hairline iridescent fringe,
+ *     rack-address labels, hatched stop zones on the discount ruler.
+ *     Colors come from the logo (PRODUCT.md). Aqua is never used as text on light grounds.
+ * PT: Página inicial — mundo "Piso do Galpão".
+ *     Piso de epóxi petróleo, uma faixa verde-água com uma franja iridescente finíssima,
+ *     etiquetas de endereço de porta-palete, zonas de parada hachuradas na régua de desconto.
+ *     As cores vêm do logo (PRODUCT.md). O verde-água nunca vira texto sobre fundo claro.
+ */
+
+/* EN: Elements slide in from the side before their entrance animation; clip (not hidden)
+       stops the phone from panning sideways and keeps sticky scenes working
+   PT: Elementos entram deslizando pelo lado antes da animação; clip (não hidden) impede o
+       celular de arrastar para o lado e mantém as cenas fixas funcionando */
+html,
+body {
+    overflow-x: clip;
+}
+
+/* ---------- EN: Top bar | PT: Barra do topo ---------- */
+
+.topo {
+    align-items: center;
+    background: var(--piso);
+    border-bottom: 1px solid var(--linha);
+    display: flex;
+    gap: var(--e4);
+    height: var(--topo-altura);
+    left: 0;
+    padding: 0 var(--e4);
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 50;
+}
+
+.logo {
+    display: block;
+    height: 26px;
+    width: auto;
+}
+
+.logo-ink {
+    fill: var(--logo-ink);
+}
+
+.logo-accent {
+    fill: var(--faixa);
+}
+
+.logo-name {
+    fill: var(--logo-name);
+}
+
+.topo-nav {
+    display: flex;
+    gap: var(--e3);
+}
+
+.topo-nav a,
+.topo-entrar,
+.topo-idioma {
+    color: var(--tinta-2);
+    font-size: 0.95rem;
+    font-weight: 560;
+    text-decoration: none;
+}
+
+.topo-nav a:hover,
+.topo-entrar:hover,
+.topo-idioma:hover {
+    color: var(--tinta);
+}
+
+.topo-acoes {
+    align-items: center;
+    display: flex;
+    gap: var(--e3);
+    margin-left: auto;
+}
+
+.topo-tema {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--linha);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    cursor: pointer;
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    width: 36px;
+}
+
+.topo-tema svg {
+    fill: none;
+    height: 18px;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.6;
+    width: 18px;
+}
+
+.topo-tema:hover {
+    border-color: var(--faixa);
+}
+
+/* EN: Every control in the top bar is at least 44 x 44 px to tap | PT: Todo controle do topo tem pelo menos 44 x 44 px para tocar */
+.topo-idioma,
+.topo-entrar {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.topo-tema {
+    height: 44px;
+    width: 44px;
+}
+
+/* ---------- EN: Address rail (signature: the floor lane) | PT: Trilho de endereços (assinatura: a faixa) ---------- */
+
+.trilho {
+    bottom: 0;
+    left: 0;
+    padding: calc(var(--topo-altura) + var(--e4)) 0 var(--e4) var(--e3);
+    position: fixed;
+    top: 0;
+    width: var(--trilho-largura);
+    z-index: 40;
+}
+
+/* EN: The painted lane with millimetre ticks | PT: A faixa pintada com marcações milimétricas */
+.trilho-faixa {
+    background:
+        repeating-linear-gradient(180deg, var(--linha) 0 1px, transparent 1px 12px) left 6px top 0 / 6px 100% no-repeat,
+        repeating-linear-gradient(180deg, var(--tinta-2) 0 1px, transparent 1px 60px) left 0 top 0 / 12px 100% no-repeat;
+    bottom: var(--e4);
+    left: var(--e3);
+    position: absolute;
+    top: calc(var(--topo-altura) + var(--e4));
+    width: 12px;
+}
+
+.trilho-faixa::before {
+    background: var(--franja-v);
+    bottom: 0;
+    content: "";
+    left: 13px;
+    opacity: 0.55;
+    position: absolute;
+    top: 0;
+    width: 1px;
+}
+
+/* EN: Pointer driven by landing.js (--rail from 0 to 1) | PT: Ponteiro movido pelo landing.js (--rail de 0 a 1) */
+.trilho-ponteiro {
+    background: var(--faixa);
+    box-shadow: 0 0 0 3px var(--piso);
+    height: 3px;
+    left: -2px;
+    position: absolute;
+    top: calc(var(--rail, 0) * 100%);
+    transition: top 0.15s linear;
+    width: 22px;
+}
+
+.trilho ol {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 28px;
+}
+
+.trilho a {
+    display: grid;
+    gap: 0;
+    line-height: 1.2;
+    opacity: 0.55;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.trilho a:hover,
+.trilho a[aria-current="true"] {
+    opacity: 1;
+}
+
+.trilho-codigo {
+    color: var(--tinta);
+    font-size: 0.78rem;
+}
+
+.trilho a[aria-current="true"] .trilho-codigo {
+    color: var(--faixa-texto);
+}
+
+.trilho-nome {
+    color: var(--tinta-2);
+    font-size: 0.72rem;
+    font-stretch: 80%;
+}
+
+/* ---------- EN: Scenes | PT: Cenas ---------- */
+
+main {
+    padding-left: var(--trilho-largura);
+}
+
+.cena {
+    margin: 0 auto;
+    max-width: 1320px;
+    min-height: 100vh;
+    padding: calc(var(--topo-altura) + var(--e6)) var(--e5) var(--e6);
+    position: relative;
+}
+
+/* ---------- D01 ---------- */
+
+.cena-entrada {
+    display: grid;
+    gap: var(--e5);
+    grid-template-rows: 1fr auto;
+}
+
+.entrada-texto {
+    align-self: center;
+    display: grid;
+    gap: var(--e4);
+    max-width: 1060px;
+}
+
+/* ---------- D02 ---------- */
+
+.cena-problema {
+    display: grid;
+    gap: var(--e5);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+
+.problema-texto {
+    align-self: center;
+    display: grid;
+    gap: var(--e3);
+}
+
+.entulho {
+    min-height: 520px;
+    position: relative;
+}
+
+.caco {
+    font-size: 1rem;
+    line-height: 1.4;
+    max-width: 300px;
+    padding: var(--e2) var(--e3);
+    position: absolute;
+}
+
+.caco-balao {
+    background: var(--piso-3);
+    border-radius: 14px 14px 14px 2px;
+    box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+    color: var(--tinta);
+}
+
+.caco-resposta {
+    background: var(--tinta);
+    border-radius: 14px 14px 2px 14px;
+    color: var(--piso);
+}
+
+.caco-arquivo {
+    background: var(--papel);
+    box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+    color: var(--papel-tinta);
+    font-stretch: 75%;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.caco-bilhete {
+    background: #F2C4CE;
+    color: #17252D;
+    font-stretch: 90%;
+    font-weight: 600;
+}
+
+.caco-1 { left: 2%;  top: 4%;  rotate: -3deg; }
+.caco-2 { right: 4%; top: 18%; rotate: 2.5deg; }
+.caco-3 { left: 14%; top: 42%; rotate: -6deg; }
+.caco-4 { right: 10%; top: 58%; rotate: 4deg; }
+.caco-5 { left: 4%;  top: 76%; rotate: -1.5deg; }
+
+.problema-fecho {
+    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-stretch: 112%;
+    font-weight: 700;
+    grid-column: 1 / -1;
+    max-width: 30ch;
+}
+
+/* ---------- D03 PEAK | PT: PICO ---------- */
+
+.cena-trava .fx-palco {
+    padding: calc(var(--topo-altura) + var(--e3)) var(--e5) var(--e4) calc(var(--trilho-largura) + var(--e5));
+}
+
+.trava-grade {
+    align-items: center;
+    column-gap: var(--e5);
+    display: grid;
+    grid-template-areas:
+        "narracao orcamento"
+        "regua    regua";
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    height: 100%;
+    max-width: 1240px;
+    row-gap: var(--e4);
+    width: 100%;
+}
+
+.trava-narracao {
+    display: grid;
+    gap: var(--e4);
+    grid-area: narracao;
+}
+
+.passos {
+    counter-reset: passo;
+    display: grid;
+    gap: var(--e2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* EN: Future steps stay fully readable (contrast >= 4.5 in both themes); the current step
+       stands out by ink, weight and the aqua line, not by fading the others
+   PT: Os próximos passos continuam legíveis (contraste >= 4,5 nos dois temas); o passo atual
+       se destaca pela tinta, pelo peso e pela linha verde-água, não por apagar os outros */
+.passos li {
+    border-left: 1px solid var(--linha);
+    color: var(--tinta-2);
+    font-size: 1.12rem;
+    padding-left: var(--e3);
+    transition: opacity 0.5s var(--suave), color 0.5s ease, border-color 0.5s ease;
+}
+
+.passos li.ativo {
+    border-left-color: var(--faixa);
+    color: var(--tinta);
+    font-weight: 620;
+    opacity: 1;
+}
+
+.passos li.feito {
+    text-decoration: line-through;
+    text-decoration-color: var(--linha);
+}
+
+/* EN: The quote is a sheet of paper on the floor | PT: O orçamento é uma folha de papel sobre o piso */
+.orcamento {
+    background: var(--papel);
+    border-radius: 3px;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.75), 0 2px 0 rgba(0, 0, 0, 0.12);
+    color: var(--papel-tinta);
+    grid-area: orcamento;
+    padding: var(--e3) var(--e4) var(--e3);
+}
+
+.orcamento-topo {
+    align-items: baseline;
+    border-bottom: 2px solid var(--papel-tinta);
+    display: flex;
+    gap: var(--e2);
+    padding-bottom: var(--e1);
+}
+
+.orcamento-numero {
+    font-size: 0.85rem;
+}
+
+.orcamento-cliente {
+    font-size: 1.15rem;
+    font-stretch: 110%;
+    font-weight: 720;
+}
+
+.orcamento .etiqueta-exemplo {
+    color: #3E5660;
+    margin-left: auto;
+}
+
+.orcamento-itens {
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    margin: var(--e2) 0;
+    width: 100%;
+}
+
+.orcamento-itens th {
+    color: #3E5660;
+    font-size: 0.7rem;
+    font-stretch: 75%;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.orcamento-itens td,
+.orcamento-itens th {
+    border-bottom: 1px solid rgba(23, 37, 45, 0.12);
+    padding: 6px 0;
+}
+
+.orcamento-itens td:not(:first-child),
+.orcamento-itens th:not(:first-child) {
+    text-align: right;
+}
+
+.orcamento-totais {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+}
+
+.orcamento-totais div {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+}
+
+.orcamento-totais dt {
+    color: #3E5660;
+    font-size: 0.92rem;
+}
+
+.orcamento-totais dd {
+    font-weight: 650;
+    margin: 0;
+}
+
+.total-final {
+    border-top: 2px solid var(--papel-tinta);
+    margin-top: var(--e1);
+    padding-top: var(--e1);
+}
+
+.total-final dd {
+    font-size: 1.7rem;
+    font-stretch: 112%;
+    font-weight: 800;
+}
+
+/* EN: State: line form carries meaning, text names it | PT: Estado: a forma da linha carrega o sentido, o texto dá o nome */
+.estado {
+    align-items: center;
+    display: flex;
+    font-size: 0.95rem;
+    font-weight: 650;
+    gap: var(--e2);
+    margin-top: var(--e3);
+    min-height: 2.6em;
+}
+
+.estado-linha {
+    flex: 0 0 64px;
+    height: 0;
+    position: relative;
+}
+
+.estado-linha::before {
+    border-top: 3px solid #17252D;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: -1.5px;
+}
+
+[data-estado="rascunho"] .estado-linha::before {
+    border-top: 3px dotted #3E5660;
+}
+
+[data-estado="aguardando"] .estado-linha::before,
+[data-estado="caiu"] .estado-linha::before {
+    border-top: 3px dashed #17252D;
+}
+
+/* EN: Voided approval: dashed and struck | PT: Aprovação derrubada: tracejada e riscada */
+[data-estado="caiu"] .estado-linha::after {
+    background: #17252D;
+    content: "";
+    height: 3px;
+    left: 26px;
+    position: absolute;
+    rotate: -55deg;
+    top: -1.5px;
+    width: 14px;
+}
+
+[data-estado="aprovado"] .estado-linha::before,
+[data-estado="aceito"] .estado-linha::before {
+    border-top: 3px solid #0E6B5E;
+}
+
+[data-estado="aceito"] .estado-linha::after {
+    background: var(--franja);
+    content: "";
+    height: 1px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 4px;
+}
+
+.cena-trava .regua {
+    grid-area: regua;
+}
+
+/* EN: The moving needle of the peak ruler | PT: O ponteiro que anda na régua do pico */
+.regua-ponteiro {
+    bottom: -18px;
+    left: calc(var(--ponteiro, 0) * var(--em));
+    position: absolute;
+    top: -22px;
+    width: 0;
+}
+
+.regua-ponteiro::before {
+    background: var(--faixa);
+    bottom: 0;
+    content: "";
+    left: -1.5px;
+    position: absolute;
+    top: 0;
+    width: 3px;
+}
+
+.regua-ponteiro .contador {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+    font-size: 0.85rem;
+    font-weight: 750;
+    left: 0;
+    padding: 2px 8px;
+    position: absolute;
+    top: -30px;
+    translate: -50% 0;
+    white-space: nowrap;
+}
+
+/* EN: The lock moment: the hit stop flashes its fringe | PT: O momento da trava: o batente atingido acende a franja */
+.cena-trava[data-travado="5"] .batente-5,
+.cena-trava[data-travado="15"] .batente-15 {
+    background: var(--faixa);
+}
+
+.cena-trava[data-travado="5"] .batente-5::after {
+    opacity: 1;
+    width: 2px;
+}
+
+/* ---------- D04 ---------- */
+
+.cena-recompra {
+    display: grid;
+    gap: var(--e6);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.recompra-texto {
+    display: grid;
+    gap: var(--e3);
+    margin-left: auto;
+    max-width: 640px;
+    text-align: right;
+}
+
+.recompra-texto .apoio {
+    margin-left: auto;
+}
+
+.pedidos {
+    margin: 0;
+    position: relative;
+}
+
+/* EN: Floor lane drawn from left to right when in view | PT: Faixa de piso desenhada da esquerda para a direita ao entrar na tela */
+.pedidos-faixa {
+    background: var(--faixa);
+    clip-path: inset(0 100% 0 0);
+    height: 6px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 34px;
+    transition: clip-path 1.6s var(--suave);
+}
+
+.pedidos-faixa::after {
+    background: var(--franja);
+    bottom: -3px;
+    content: "";
+    height: 1px;
+    left: 0;
+    position: absolute;
+    right: 0;
+}
+
+.pedidos-lista {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2fr) minmax(0, 2.4fr);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* EN: Marker centered on the lane (lane at 34–40px), then date, then label
+   PT: Marca centralizada na faixa (faixa em 34–40px), depois data, depois rótulo */
+.pedido {
+    align-content: start;
+    display: grid;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.5s ease, transform 0.5s var(--suave);
+    transform: translateY(12px);
+}
+
+.pedido-marca {
+    background: var(--piso);
+    border: 3px solid var(--tinta);
+    height: 22px;
+    margin: 26px 0 var(--e2);
+    width: 22px;
+}
+
+.pedido-data {
+    font-size: 0.85rem;
+    font-weight: 650;
+}
+
+.pedido-rotulo {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+/* EN: The silence: a dashed stretch of floor | PT: O silêncio: um trecho tracejado do piso */
+.pedido-silencio {
+    align-self: start;
+    border-top: 3px dashed var(--tinta-2);
+    margin-top: 34px;
+    padding-top: var(--e3);
+    text-align: center;
+}
+
+.pedido-alerta .pedido-marca {
+    background: var(--faixa);
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 4px;
+}
+
+.alerta {
+    background: var(--papel);
+    border-radius: 3px;
+    box-shadow: 0 24px 50px -28px rgba(0, 0, 0, 0.7);
+    color: var(--papel-tinta);
+    display: grid;
+    gap: 2px;
+    justify-items: start;
+    margin-top: var(--e2);
+    padding: var(--e2) var(--e3);
+}
+
+.alerta .etiqueta-exemplo {
+    color: #3E5660;
+    margin-top: 6px;
+}
+
+.pedidos-regra {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    margin-top: var(--e4);
+}
+
+/* EN: Drawn state, set by landing.js | PT: Estado desenhado, ligado pelo landing.js */
+.pedidos.desenhar .pedidos-faixa {
+    clip-path: inset(0 0 0 0);
+}
+
+.pedidos.desenhar .pedido {
+    opacity: 1;
+    transform: none;
+}
+
+.pedidos.desenhar .pedido:nth-child(2) { transition-delay: 0.15s; }
+.pedidos.desenhar .pedido:nth-child(3) { transition-delay: 0.3s; }
+.pedidos.desenhar .pedido:nth-child(4) { transition-delay: 0.45s; }
+.pedidos.desenhar .pedido:nth-child(5) { transition-delay: 0.75s; }
+.pedidos.desenhar .pedido:nth-child(6) { transition-delay: 1.05s; }
+
+/* ---------- D05 ---------- */
+
+.cena-equipe {
+    display: grid;
+    gap: var(--e5);
+    min-height: auto;
+}
+
+/* EN: Rack rows: a shelf line, the address label, what the role sees
+   PT: Prateleiras: uma linha de prateleira, a etiqueta de endereço, o que o cargo vê */
+.porta-paletes {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.baia-papel {
+    align-items: baseline;
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e4);
+    grid-template-columns: minmax(180px, 3fr) minmax(0, 9fr);
+    padding: var(--e4) 0;
+}
+
+.baia-papel:last-child {
+    border-bottom: 1px solid var(--linha);
+}
+
+.baia-papel .etiqueta-endereco {
+    background: var(--tinta);
+    color: var(--piso);
+    justify-self: start;
+    padding: 6px 12px 4px;
+    font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+    font-stretch: 70%;
+    font-weight: 760;
+    letter-spacing: 0.06em;
+    line-height: 1;
+}
+
+.baia-papel p {
+    color: var(--tinta-2);
+    font-size: 1.15rem;
+    max-width: 52ch;
+}
+
+/* ---------- D06 ---------- */
+
+.cena-planos {
+    display: grid;
+    gap: var(--e5);
+    min-height: auto;
+}
+
+.planos-texto {
+    display: grid;
+    gap: var(--e3);
+}
+
+/* EN: Four bays of one rack; shelf lines instead of floating cards
+   PT: Quatro baias de um porta-palete; linhas de prateleira em vez de cartões flutuando */
+.planos-grade {
+    border-top: 2px solid var(--tinta);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.plano {
+    border-right: 1px solid var(--linha);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e3);
+    padding: var(--e4) var(--e3) var(--e3);
+}
+
+.plano:first-child {
+    border-left: 1px solid var(--linha);
+}
+
+.plano h3 {
+    font-size: 1rem;
+    font-stretch: 72%;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.plano-preco {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+    font-stretch: 112%;
+    font-weight: 800;
+    gap: 6px;
+}
+
+.plano-preco small {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    font-stretch: 100%;
+    font-weight: 500;
+}
+
+.plano-limites,
+.plano-recursos {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.plano-limites li {
+    border-bottom: 1px dotted var(--linha);
+    display: flex;
+    font-size: 0.95rem;
+    justify-content: space-between;
+    padding-bottom: 6px;
+}
+
+.plano-limites span {
+    color: var(--tinta-2);
+}
+
+.plano-recursos li {
+    align-items: center;
+    display: flex;
+    font-size: 0.92rem;
+    gap: var(--e2);
+}
+
+.recurso-linha {
+    flex: 0 0 22px;
+    height: 0;
+    position: relative;
+}
+
+.recurso-linha::before {
+    border-top: 2px solid var(--faixa-texto);
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+}
+
+.nao-tem {
+    color: var(--tinta-2);
+    opacity: 0.6;
+}
+
+.nao-tem .recurso-linha::before {
+    border-top: 2px dotted var(--tinta-2);
+}
+
+.nao-tem span:not(.recurso-linha):not(.sr-only) {
+    text-decoration: line-through;
+    text-decoration-color: var(--tinta-2);
+}
+
+.plano-suporte {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+}
+
+.plano .botao {
+    margin-top: auto;
+}
+
+.plano-gratis {
+    background: var(--piso-2);
+}
+
+/* ---------- D07: questions | PT: dúvidas ---------- */
+
+.cena-duvidas {
+    align-items: start;
+    display: grid;
+    gap: var(--e5);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    min-height: auto;
+}
+
+.duvidas-texto {
+    display: grid;
+    gap: var(--e3);
+}
+
+/* EN: Today vs SupplyFlow: today's column is struck through (state as line form)
+   PT: Hoje x SupplyFlow: a coluna de hoje vem riscada (estado como forma de linha) */
+.comparativo {
+    border-collapse: collapse;
+    border-top: 2px solid var(--tinta);
+    font-size: 0.95rem;
+    width: 100%;
+}
+
+.comparativo th,
+.comparativo td {
+    border-bottom: 1px solid var(--linha);
+    padding: 12px 10px 12px 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.comparativo thead th {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.comparativo tbody th {
+    font-weight: 700;
+}
+
+.comparativo-hoje {
+    color: var(--tinta-2);
+    text-decoration: line-through;
+    text-decoration-color: var(--linha);
+}
+
+.comparativo-sf {
+    font-weight: 650;
+}
+
+.faq {
+    border-top: 2px solid var(--tinta);
+    display: grid;
+}
+
+.faq-item {
+    border-bottom: 1px solid var(--linha);
+}
+
+.faq-item summary {
+    cursor: pointer;
+    display: flex;
+    font-size: 1.08rem;
+    font-weight: 650;
+    gap: var(--e2);
+    justify-content: space-between;
+    list-style: none;
+    min-height: 44px;
+    padding: 16px 0;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+/* EN: + turns into - (rotation of one bar, transform only) | PT: o + vira - (gira uma barra, só transform) */
+.faq-item summary::after {
+    color: var(--faixa-texto);
+    content: "+";
+    flex: none;
+    font-weight: 700;
+    transition: transform 0.25s var(--suave);
+}
+
+.faq-item[open] summary::after {
+    transform: rotate(45deg);
+}
+
+.faq-item p {
+    color: var(--tinta-2);
+    margin: 0 0 18px;
+    max-width: 62ch;
+}
+
+@media (max-width: 900px) {
+    .cena-duvidas {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- D08 ---------- */
+
+.cena-saida {
+    align-content: center;
+    display: grid;
+    gap: var(--e4);
+    justify-items: start;
+    min-height: 90vh;
+}
+
+.titulo-saida {
+    max-width: 16ch;
+}
+
+/* EN: The lane ends at a final stop | PT: A faixa termina num batente final */
+.batente-final {
+    background: var(--faixa);
+    bottom: var(--e5);
+    height: 6px;
+    left: var(--e5);
+    position: absolute;
+    right: var(--e5);
+}
+
+.batente-final::after {
+    background: var(--tinta);
+    content: "";
+    height: 40px;
+    position: absolute;
+    right: 0;
+    top: -17px;
+    width: 6px;
+}
+
+/* ---------- EN: Footer | PT: Rodapé ---------- */
+
+.rodape {
+    border-top: 1px solid var(--linha);
+    color: var(--tinta-2);
+    display: grid;
+    font-size: 0.9rem;
+    gap: var(--e2);
+    margin-left: var(--trilho-largura);
+    padding: var(--e5);
+}
+
+.rodape .logo {
+    height: 22px;
+}
+
+.rodape-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e3);
+}
+
+/* ---------- EN: Reduced motion: everything legible and still | PT: Movimento reduzido: tudo legível e parado ---------- */
+
+.fx-reduzido .cena-trava .fx-palco {
+    padding-top: calc(var(--topo-altura) + var(--e6));
+}
+
+.fx-reduzido .passos li {
+    opacity: 1;
+}
+
+.fx-reduzido .pedido,
+.fx-reduzido .pedidos-faixa {
+    clip-path: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+
+.fx-reduzido .contador-fita,
+.fx-reduzido .trilho-ponteiro {
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ---------- EN: Tablet | PT: Tablet ---------- */
+
+@media (max-width: 1100px) {
+    :root {
+        --trilho-largura: 0px;
+    }
+
+    /* EN: The rail becomes a thin lane on the left edge | PT: O trilho vira uma faixa fina na borda esquerda */
+    .trilho {
+        padding: 0;
+        pointer-events: none;
+        width: 6px;
+    }
+
+    .trilho ol {
+        display: none;
+    }
+
+    .trilho-faixa {
+        left: 0;
+        top: var(--topo-altura);
+        width: 4px;
+    }
+
+    .trilho-faixa::before {
+        left: 4px;
+    }
+
+    .trilho-ponteiro {
+        left: 0;
+        width: 6px;
+        height: 28px;
+    }
+
+    .topo-nav {
+        display: none;
+    }
+
+    .cena {
+        padding-left: var(--e4);
+        padding-right: var(--e4);
+    }
+
+    .cena-trava .fx-palco {
+        padding-left: var(--e4);
+        padding-right: var(--e4);
+    }
+
+    .cena-problema {
+        grid-template-columns: 1fr;
+    }
+
+    .planos-grade {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plano {
+        border-bottom: 1px solid var(--linha);
+    }
+
+    .plano:nth-child(3) {
+        border-left: 1px solid var(--linha);
+    }
+
+    .rodape {
+        padding: var(--e4);
+    }
+}
+
+/* ---------- EN: Phone | PT: Celular ---------- */
+
+@media (max-width: 680px) {
+    :root {
+        --topo-altura: 60px;
+    }
+
+    body {
+        font-size: 17px;
+    }
+
+    .topo {
+        gap: var(--e2);
+        padding: 0 var(--e2);
+    }
+
+    /* EN: On phones the CTA lives in the hero; "Entrar" stays for people who already have an account
+       PT: No celular a chamada fica no topo da página; "Entrar" continua para quem já tem conta */
+    .topo-acoes .botao-pequeno {
+        display: none;
+    }
+
+    .topo-acoes {
+        gap: var(--e1);
+    }
+
+    .logo {
+        height: 22px;
+    }
+
+    .cena {
+        padding: calc(var(--topo-altura) + var(--e5)) var(--e3) var(--e5);
+    }
+
+    .cena-entrada {
+        min-height: 92vh;
+    }
+
+    /* EN: Narrower stencil on phones so the longest word fits 390px
+       PT: Letreiro mais estreito no celular para a palavra mais longa caber em 390px */
+    .titulo-mestre {
+        font-size: clamp(2.1rem, 10.4vw, 3rem);
+        font-stretch: 108%;
+    }
+
+    .cena-entrada > *,
+    .cena-problema > * {
+        min-width: 0;
+    }
+
+    .regua-legenda {
+        font-size: 0.75rem;
+    }
+
+    .legenda-15 {
+        left: auto;
+        right: 0;
+    }
+
+    .entulho {
+        min-height: 560px;
+    }
+
+    .caco {
+        max-width: 78%;
+    }
+
+    /* EN: Peak stacks: steps, quote, ruler — all inside one screen
+       PT: O pico empilha: passos, orçamento, régua — tudo dentro de uma tela */
+    .cena-trava .fx-palco {
+        align-items: start;
+        padding: calc(var(--topo-altura) + var(--e2)) var(--e3) var(--e3);
+    }
+
+    .trava-grade {
+        align-content: start;
+        grid-template-areas:
+            "narracao"
+            "orcamento"
+            "regua";
+        grid-template-columns: 1fr;
+        height: auto;
+        row-gap: var(--e4);
+    }
+
+    .trava-narracao {
+        gap: var(--e2);
+    }
+
+    .trava-narracao .titulo {
+        font-size: 1.6rem;
+    }
+
+    /* EN: Only the current step is shown on phones | PT: No celular só aparece o passo atual */
+    .passos li {
+        display: none;
+        font-size: 1rem;
+    }
+
+    .passos li.ativo {
+        display: block;
+    }
+
+    .fx-reduzido .passos li {
+        display: block;
+    }
+
+    .orcamento {
+        padding: var(--e2) var(--e3);
+    }
+
+    .orcamento-itens {
+        display: none;
+    }
+
+    .orcamento-totais {
+        margin-top: var(--e2);
+    }
+
+    .total-final dd {
+        font-size: 1.4rem;
+    }
+
+    .estado {
+        margin-top: var(--e2);
+    }
+
+    .recompra-texto {
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .recompra-texto .apoio {
+        margin-left: 0;
+    }
+
+    /* EN: The order lane turns vertical | PT: A faixa de pedidos fica na vertical */
+    .pedidos-faixa {
+        bottom: 0;
+        clip-path: inset(0 0 100% 0);
+        height: auto;
+        left: 9px;
+        right: auto;
+        top: 0;
+        width: 6px;
+    }
+
+    .pedidos-lista {
+        gap: var(--e3);
+        grid-template-columns: 1fr;
+        padding-left: 44px;
+    }
+
+    .pedido {
+        position: relative;
+    }
+
+    .pedido-marca {
+        left: -44px;
+        margin: 0;
+        position: absolute;
+        top: 0;
+    }
+
+    .pedido-data {
+        margin: 0;
+    }
+
+    .pedido-silencio {
+        border-left: 3px dashed var(--tinta-2);
+        border-top: 0;
+        margin: 0 0 0 -35px;
+        padding: var(--e3) 0 var(--e3) 32px;
+        text-align: left;
+    }
+
+    .baia-papel {
+        gap: var(--e2);
+        grid-template-columns: 1fr;
+    }
+
+    .planos-grade {
+        grid-template-columns: 1fr;
+    }
+
+    .plano {
+        border-left: 1px solid var(--linha);
+    }
+
+    .batente-final {
+        left: var(--e3);
+        right: var(--e3);
+    }
+}

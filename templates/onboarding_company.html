@@ -1,0 +1,73 @@
+{#
+    EN: First setup, step 1 (settings.py): the company data printed on every quote and shown
+        in the buyer portal, plus the logo. The side panel shows a piece of the quote sheet
+        so the owner sees where these data go.
+    PT: Configuração inicial, passo 1 (settings.py): os dados da empresa impressos em todo
+        orçamento e mostrados no portal do comprador, mais a logo. O painel lateral mostra um
+        pedaço da folha do orçamento, para o dono ver onde esses dados aparecem.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("settings.company_title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    <p class="passo-onboarding">{{ t("onboarding.step").replace("{n}", "1") }}</p>
+    <h1 class="titulo-pagina">{{ t("settings.company_title") }}</h1>
+    <p class="subtitulo">{{ t("settings.company_subtitle") }}</p>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <form action="/onboarding" class="formulario" enctype="multipart/form-data" method="post">
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        <div class="campo">
+            <label for="name">{{ t("settings.name") }}</label>
+            <input id="name" maxlength="100" name="name" required type="text" value="{{ form.name or '' }}">
+        </div>
+        <div class="campo">
+            <label for="cnpj">{{ t("customers.cnpj") }}</label>
+            <small class="dica" id="cnpj-dica">{{ t("settings.cnpj_hint") }}</small>
+            <input aria-describedby="cnpj-dica" id="cnpj" inputmode="numeric" maxlength="18" name="cnpj" placeholder="00.000.000/0000-00" required type="text" value="{{ form.cnpj or '' }}">
+        </div>
+        <div class="campos-dupla">
+            <div class="campo">
+                <label for="email">{{ t("settings.email") }}</label>
+                <input autocomplete="email" id="email" maxlength="254" name="email" required type="email" value="{{ form.email or '' }}">
+            </div>
+            <div class="campo">
+                <label for="phone">{{ t("settings.phone") }}</label>
+                <input autocomplete="tel" id="phone" inputmode="tel" maxlength="20" name="phone" placeholder="(11) 98765-4321" required type="text" value="{{ form.phone or '' }}">
+            </div>
+        </div>
+        <div class="campo">
+            <label for="city">{{ t("customers.city") }}</label>
+            <input id="city" maxlength="80" name="city" required type="text" value="{{ form.city or '' }}">
+        </div>
+        <div class="campo">
+            <label for="logo">{{ t("settings.logo") }} <small>({{ t("products.optional") }})</small></label>
+            <small class="dica" id="logo-dica">{{ t("settings.logo_hint") }}</small>
+            <input accept="image/png,image/jpeg,image/webp" aria-describedby="logo-dica" id="logo" name="logo" type="file">
+        </div>
+
+        <button class="botao botao-faixa botao-largo" type="submit">{{ t("settings.continue") }}</button>
+    </form>
+{% endblock %}
+
+{% block panel %}
+    <p class="acesso-frase">{{ t("settings.panel_line") }}</p>
+    {# EN: a slice of the quote sheet, with the data this form fills | PT: um pedaço da folha do orçamento, com os dados deste formulário #}
+    <div class="folha-amostra">
+        <span class="folha-amostra-faixa"></span>
+        <strong>{{ ws.name }}</strong>
+        <span>{{ t("customers.cnpj") }} · {{ t("customers.city") }}</span>
+        <span>{{ t("settings.phone") }} · {{ t("settings.email") }}</span>
+        <span class="folha-amostra-linha"></span>
+        <b>{{ t("doc.title") }} nº 0001</b>
+    </div>
+{% endblock %}

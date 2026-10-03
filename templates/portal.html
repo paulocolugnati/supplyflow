@@ -1,0 +1,110 @@
+{#
+    EN: Buyer home (portal.py). Built around one question: "what do I need to answer?".
+        A summary line counts the quotes waiting; each distributor shows its logo and a
+        WhatsApp button; quotes to answer come first as cards (items, days left, one clear
+        button); the history (accepted / declined / expired) follows, only on full portals.
+    PT: Início do comprador (portal.py). Organizado em torno de uma pergunta: "o que preciso
+        responder?". Uma linha de resumo conta os orçamentos esperando; cada distribuidora
+        mostra a logo e um botão de WhatsApp; os orçamentos a responder vêm primeiro como
+        cartões (itens, dias restantes, um botão claro); o histórico (aceitos / recusados /
+        vencidos) vem depois, só no portal completo.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% macro days_label(days) -%}
+    {%- if days is none -%}{%- elif days <= 0 -%}{{ t("portal.due_today") }}{%- elif days == 1 -%}{{ t("portal.due_tomorrow") }}{%- else -%}{{ t("portal.due_in").replace("{n}", days | string) }}{%- endif -%}
+{%- endmacro %}
+
+{% block title %}{{ t("portal.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("portal.hello").replace("{name}", current_user.name.split()[0]) }}</h1>
+            <p class="subtitulo">{{ t("portal.intro") }}</p>
+        </div>
+    </header>
+
+    {% if link_count == 0 %}
+        <section class="vazio chapa">
+            <span aria-hidden="true" class="vazio-faixa"></span>
+            <h2 class="titulo-secao">{{ t("portal.empty_title") }}</h2>
+            <p>{{ t("portal.no_links") }}</p>
+            <div class="email-copiar">
+                <input aria-label="{{ t('register.email') }}" id="meu-email" readonly type="text" value="{{ current_user.email }}">
+                <button class="botao botao-contorno botao-pequeno" data-copy="#meu-email" type="button">{{ icon("copiar", 16) }}<span>{{ t("team.copy") }}</span></button>
+            </div>
+        </section>
+    {% else %}
+        {# EN: The one line that tells the buyer what to do | PT: A linha que diz ao comprador o que fazer #}
+        <p class="portal-resumo{% if waiting %} portal-resumo-acao{% endif %}" role="status">
+            {% if waiting == 0 %}{{ t("portal.waiting_none") }}{% elif waiting == 1 %}{{ t("portal.waiting_one") }}{% else %}{{ t("portal.waiting_many").replace("{n}", waiting | string) }}{% endif %}
+        </p>
+
+        {% for group in groups %}
+            <section aria-labelledby="dist-{{ loop.index }}" class="distribuidora">
+                <div class="distribuidora-topo">
+                    {% if group.logo %}<img alt="" class="logo-distribuidora" src="{{ group.logo }}">{% endif %}
+                    <h2 class="distribuidora-nome" id="dist-{{ loop.index }}">{{ group.name }}</h2>
+                    {% if group.whatsapp %}
+                        <a class="botao botao-contorno botao-pequeno" href="{{ group.whatsapp }}" rel="noopener" target="_blank">{{ icon("mensagem", 16) }}{{ t("portal.talk_distributor") }}</a>
+                    {% endif %}
+                </div>
+
+                {% for customer in group.customers %}
+                    <div class="chapa">
+                        <p class="dica">{{ t("portal.buying_as") }} <strong>{{ customer.name }}</strong></p>
+
+                        {% if customer.open %}
+                            <ul class="cartoes-portal">
+                                {% for q in customer.open %}
+                                    <li class="cartao-portal{% if q.days_left is not none and q.days_left <= 1 %} cartao-portal-urgente{% endif %}">
+                                        <div class="cartao-portal-topo">
+                                            <strong>{{ t("quotes.quote") }} #{{ "%04d" | format(q.number) }}</strong>
+                                            <span class="cartao-portal-prazo">{{ days_label(q.days_left) }}</span>
+                                        </div>
+                                        <p class="cartao-portal-itens">
+                                            {{ q["items"].names | join(", ") }}{% if q["items"].more %} {{ t("portal.more_items").replace("{n}", q["items"].more | string) }}{% endif %}
+                                        </p>
+                                        <div class="cartao-portal-rodape">
+                                            <span class="cartao-portal-total">
+                                                <b>{{ q.final_total_cents | brl }}</b>
+                                                {% if q.list_total_cents > q.final_total_cents %}<small>{{ t("portal.you_save") }} {{ (q.list_total_cents - q.final_total_cents) | brl }}</small>{% endif %}
+                                            </span>
+                                            <a class="botao botao-faixa" href="/portal/quotes/{{ q.id }}">{{ t("portal.open_and_answer") }}</a>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if customer.history %}
+                            <h3 class="titulo-bloco portal-historico-titulo">{{ t("portal.history") }}</h3>
+                            <ul class="lista-portal">
+                                {% for q in customer.history %}
+                                    <li>
+                                        <a class="item-portal" href="/portal/quotes/{{ q.id }}">
+                                            <span class="item-portal-texto">
+                                                <strong>{{ t("quotes.quote") }} #{{ "%04d" | format(q.number) }}</strong>
+                                                <small>{{ t("quotes.status_" ~ q.status) }}{% if q.customer_decided_at %} · {{ q.customer_decided_at | local_time }}{% endif %}</small>
+                                            </span>
+                                            <b>{{ q.final_total_cents | brl }}</b>
+                                            {{ icon("seta", 18) }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if not customer.open and not customer.history %}
+                            <p class="dica">{{ t("portal.no_quotes") }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </section>
+        {% endfor %}
+    {% endif %}
+
+{% endblock %}

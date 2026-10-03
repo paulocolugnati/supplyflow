@@ -1,0 +1,50 @@
+{#
+    EN: Edit a contact of a customer.
+    PT: Edita um contato de um cliente.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ contact.name }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ contact.name }}</h1>
+            <p class="subtitulo"><a href="/customers/{{ customer.id }}#contatos">{{ customer.name }}</a></p>
+        </div>
+    </header>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <form action="/customers/{{ customer.id }}/contacts/{{ contact.id }}/edit" class="chapa formulario formulario-largo" method="post" novalidate>
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+        <div class="campo campo-inteiro">
+            <label for="name">{{ t("customers.contact_name") }}</label>
+            <input autofocus id="name" maxlength="120" name="name" required type="text" value="{{ form.name or '' }}">
+        </div>
+        <div class="campo">
+            <label for="position">{{ t("customers.position") }}</label>
+            <input id="position" maxlength="60" name="position" type="text" value="{{ form.position or '' }}">
+        </div>
+        <div class="campo">
+            <label for="phone">{{ t("customers.phone") }}</label>
+            <input id="phone" inputmode="tel" maxlength="25" name="phone" type="tel" value="{{ form.phone | phone if form.phone and form.phone.startswith('55') else (form.phone or '') }}">
+        </div>
+        <div class="campo campo-inteiro">
+            <label for="email">{{ t("register.email") }}</label>
+            <input id="email" maxlength="254" name="email" type="email" value="{{ form.email or '' }}">
+        </div>
+        <div class="acoes-linha campo-inteiro">
+            <button class="botao botao-faixa" type="submit">{{ t("customers.save") }}</button>
+            <a class="botao botao-contorno" href="/customers/{{ customer.id }}#contatos">{{ t("customers.cancel") }}</a>
+        </div>
+    </form>
+
+{% endblock %}

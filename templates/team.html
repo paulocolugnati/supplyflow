@@ -1,0 +1,174 @@
+{#
+    EN: Team page (admins and owners). Every action is a small POST form with the CSRF token;
+        the server re-checks every permission, the buttons only hide what the user can't do.
+        Menus are native <details> elements, so they work without JavaScript.
+    PT: Página da equipe (admins e owners). Cada ação é um pequeno formulário POST com o token
+        CSRF; o servidor confere cada permissão de novo, os botões só escondem o que o usuário
+        não pode fazer. Os menus são elementos <details> nativos, então funcionam sem JavaScript.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("team.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    {% set is_owner = membership.role == "owner" %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("team.title") }}</h1>
+            <p class="subtitulo">{{ membership.workspace_name }} · {{ members | length }} {{ t("team.people") }}</p>
+        </div>
+        <form action="/team/leave" data-confirm="{{ t('team.confirm_leave') }}" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <button class="botao botao-texto botao-perigo" type="submit">{{ icon("sair", 18) }}<span>{{ t("team.leave") }}</span></button>
+        </form>
+    </header>
+
+    {# EN: Shown once, right after creating an invite (only the hash is stored)
+       PT: Aparece uma vez, logo depois de criar um convite (só o hash fica guardado) #}
+    {% if new_invite %}
+        <section aria-labelledby="novo-convite" class="chapa chapa-destaque">
+            <h2 class="titulo-secao" id="novo-convite">{{ t("team.invite_created") }} {{ new_invite.email }}</h2>
+            <div class="email-copiar">
+                <input aria-label="{{ t('team.invite_link') }}" id="invite-link" readonly type="text" value="{{ new_invite.link }}">
+                <button class="botao botao-contorno botao-pequeno" data-copy="#invite-link" type="button">{{ icon("copiar", 16) }}<span>{{ t("team.copy") }}</span></button>
+                <a class="botao botao-faixa botao-pequeno" href="{{ new_invite.share }}" rel="noopener" target="_blank">{{ icon("mensagem", 16) }}<span>{{ t("team.share_whatsapp") }}</span></a>
+            </div>
+            <p class="dica">{{ t("team.invite_once") }}</p>
+        </section>
+    {% endif %}
+
+    <div class="grade-equipe">
+
+        {# EN: Members | PT: Membros #}
+        <section aria-labelledby="membros-titulo" class="chapa">
+            <h2 class="titulo-secao" id="membros-titulo">{{ t("team.members") }}</h2>
+            <table class="tabela tabela-membros">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ t("team.name") }}</th>
+                        <th scope="col">{{ t("team.role") }}</th>
+                        {% if membership.role in ("owner", "admin") %}<th scope="col">{{ t("team.commission") }}</th>{% endif %}
+                        <th class="coluna-acao" scope="col"><span class="sr-only">{{ t("team.actions") }}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in members %}
+                        <tr>
+                            <td>
+                                <strong>{{ m.name }}</strong>{% if m.user_id == my_id %} <span class="tag-voce">{{ t("team.you") }}</span>{% endif %}
+                                <small class="celula-sub">{{ m.email }}</small>
+                            </td>
+                            <td><span class="tag-cargo tag-{{ m.role }}">{{ t("role." ~ m.role) }}</span></td>
+                            {# EN: Commission: the owner edits, the manager only reads | PT: Comissão: o dono edita, o gerente só lê #}
+                            {% if is_owner %}
+                                <td>
+                                    <form action="/team/members/{{ m.user_id }}/commission" class="comissao-form" method="post">
+                                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                        <label class="sr-only" for="comissao-{{ m.user_id }}">{{ t("team.commission") }} · {{ m.name }}</label>
+                                        <div class="entrada-sufixo-curta">
+                                            <input id="comissao-{{ m.user_id }}" inputmode="decimal" maxlength="6" name="commission" type="text" value="{{ m.commission_bps | pct | replace('%', '') }}">
+                                            <span aria-hidden="true">%</span>
+                                        </div>
+                                        <button class="botao botao-contorno botao-mini-texto" type="submit">{{ t("team.save") }}</button>
+                                    </form>
+                                </td>
+                            {% elif membership.role == "admin" %}
+                                <td>{{ m.commission_bps | pct }}</td>
+                            {% endif %}
+                            <td class="coluna-acao">
+                                {# EN: Nobody acts on an owner or on themselves here
+                                   PT: Ninguém age sobre um owner nem sobre si mesmo aqui #}
+                                {% if m.role != "owner" and m.user_id != my_id and (is_owner or m.role == "member") %}
+                                    <details class="menu">
+                                        <summary aria-label="{{ t('team.manage') }} {{ m.name }}" class="botao-icone">{{ icon("mais", 20) }}</summary>
+                                        <div class="menu-painel menu-direita">
+                                            {% if is_owner %}
+                                                {% set other_role = "member" if m.role == "admin" else "admin" %}
+                                                <form action="/team/members/{{ m.user_id }}/role" method="post">
+                                                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                    <input name="role" type="hidden" value="{{ other_role }}">
+                                                    <button class="menu-item" type="submit">{{ t("team.make_" ~ other_role) }}</button>
+                                                </form>
+                                                {% if can_add_owner %}
+                                                    <form action="/team/members/{{ m.user_id }}/owner" data-confirm="{{ t('team.confirm_owner') }}" method="post">
+                                                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                        <button class="menu-item" type="submit">{{ t("team.make_owner") }}</button>
+                                                    </form>
+                                                {% endif %}
+                                                <form action="/team/members/{{ m.user_id }}/transfer" data-confirm="{{ t('team.confirm_transfer') }}" method="post">
+                                                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                    <button class="menu-item" type="submit">{{ t("team.transfer") }}</button>
+                                                </form>
+                                                <hr>
+                                            {% endif %}
+                                            <form action="/team/members/{{ m.user_id }}/remove" data-confirm="{{ t('team.confirm_remove') }}" method="post">
+                                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                <button class="menu-item menu-perigo" type="submit">{{ t("team.remove") }}</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <div class="coluna-lateral">
+
+            {# EN: Invite form | PT: Formulário de convite #}
+            <section aria-labelledby="convidar-titulo" class="chapa">
+                <h2 class="titulo-secao" id="convidar-titulo">{{ t("team.invite_title") }}</h2>
+                <form action="/team/invite" class="formulario" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <div class="campo">
+                        <label for="invite-email">{{ t("register.email") }}</label>
+                        <input id="invite-email" maxlength="254" name="email" required type="email">
+                    </div>
+                    <div class="campo">
+                        <label for="invite-role">{{ t("team.role") }}</label>
+                        <select id="invite-role" name="role">
+                            {% for role in invitable_roles %}
+                                <option value="{{ role }}">{{ t("role." ~ role) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="botao botao-faixa botao-largo" type="submit">{{ t("team.send_invite") }}</button>
+                </form>
+            </section>
+
+            {# EN: Pending invites; a dashed line = waiting (state as line form)
+               PT: Convites pendentes; linha tracejada = aguardando (estado como forma de linha) #}
+            <section aria-labelledby="pendentes-titulo" class="chapa">
+                <h2 class="titulo-secao" id="pendentes-titulo">{{ t("team.pending") }}</h2>
+                {% if invites %}
+                    <ul class="lista-pendentes">
+                        {% for inv in invites %}
+                            <li>
+                                <span aria-hidden="true" class="linha-aguardando"></span>
+                                <span class="pendente-texto">
+                                    <strong>{{ inv.email }}</strong>
+                                    <small>{{ t("role." ~ inv.role) }} · {{ t("team.expires") }} {{ inv.expires_at | local_time }}</small>
+                                </span>
+                                {% if inv.role in invitable_roles %}
+                                    <form action="/team/invites/{{ inv.id }}/revoke" method="post">
+                                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                        <button class="botao-texto botao-perigo" type="submit">{{ t("team.revoke") }}</button>
+                                    </form>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="dica">{{ t("team.no_pending") }}</p>
+                {% endif %}
+            </section>
+
+        </div>
+    </div>
+
+{% endblock %}

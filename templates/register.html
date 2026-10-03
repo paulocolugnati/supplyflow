@@ -1,0 +1,115 @@
+{#
+    EN: Sign-up. Three paths: distributor (creates a workspace), buyer, or a staff invite link
+        (type and email fixed by the invite). HTML attributes only help the user; the real
+        validation is in app.py. The side panel previews the distributor name as a rack tag.
+    PT: Cadastro. Três caminhos: distribuidora (cria um workspace), comprador, ou link de
+        convite de equipe (tipo e e-mail fixados pelo convite). Os atributos do HTML só ajudam
+        o usuário; a validação de verdade está no app.py. O painel lateral mostra o nome da
+        distribuidora como etiqueta de prateleira.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("register.title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    <h1 class="titulo-pagina">{{ t("register.title") }}</h1>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <form action="/register" class="formulario" method="post" novalidate>
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        {% if invite %}
+            <input name="invite" type="hidden" value="{{ token }}">
+            <div class="aviso aviso-info">
+                {{ icon("equipe", 18) }}
+                {% if invite.kind == "customer" %}
+                    <p>{{ t("invite.buyer_joining").replace("{workspace}", invite.workspace_name).replace("{company}", invite.company_name) }}</p>
+                {% else %}
+                    <p>{{ t("invite.joining") }} <strong>{{ invite.workspace_name }}</strong> {{ t("invite.as") }} <strong>{{ t("role." ~ invite.role) }}</strong>.</p>
+                {% endif %}
+            </div>
+        {% else %}
+            {# EN: Account type as two selectable plates | PT: Tipo de conta como duas chapas selecionáveis #}
+            <fieldset class="tipos-conta">
+                <legend>{{ t("register.type_label") }}</legend>
+                {% for value, key in [("distributor", "register.type_distributor"), ("buyer", "register.type_buyer")] %}
+                    <label class="tipo-conta">
+                        <input name="account_type" type="radio" value="{{ value }}" {% if (form.account_type or "distributor") == value %}checked{% endif %}>
+                        <span class="tipo-conta-corpo">
+                            {{ icon("painel" if value == "distributor" else "portal", 22) }}
+                            <strong>{{ t(key) }}</strong>
+                            <small>{{ t(key ~ "_hint") }}</small>
+                        </span>
+                    </label>
+                {% endfor %}
+            </fieldset>
+
+            <div class="campo" data-show-when="distributor">
+                <label for="workspace_name">{{ t("register.workspace_name") }}</label>
+                <input data-previa-nome id="workspace_name" maxlength="100" name="workspace_name" type="text" value="{{ form.workspace_name or '' }}">
+            </div>
+        {% endif %}
+
+        <div class="campo">
+            <label for="name">{{ t("register.name") }}</label>
+            <input autocomplete="name" id="name" maxlength="100" name="name" required type="text" value="{{ form.name or '' }}">
+        </div>
+
+        <div class="campo">
+            <label for="email">{{ t("register.email") }}</label>
+            <input autocomplete="email" id="email" maxlength="254" name="email" required type="email" value="{{ form.email or '' }}" {% if invite %}readonly{% endif %}>
+        </div>
+
+        <div class="campo">
+            <label for="phone">{{ t("register.phone") }}</label>
+            <input autocomplete="tel" id="phone" inputmode="tel" maxlength="25" name="phone" placeholder="(11) 98765-4321" type="tel" value="{{ form.phone or '' }}">
+        </div>
+
+        <div class="campos-dupla">
+            <div class="campo">
+                <label for="password">{{ t("register.password") }}</label>
+                <input autocomplete="new-password" id="password" maxlength="128" minlength="8" name="password" required type="password">
+                <small class="dica">{{ t("register.password_hint") }}</small>
+            </div>
+            <div class="campo">
+                <label for="confirmation">{{ t("register.confirmation") }}</label>
+                <input autocomplete="new-password" id="confirmation" maxlength="128" minlength="8" name="confirmation" required type="password">
+            </div>
+        </div>
+
+        <button class="botao botao-faixa botao-largo" type="submit">{{ t("register.submit") }}</button>
+        <p class="dica aceite-termos">{{ t("register.agree_before") }} <a href="/terms" target="_blank">{{ t("terms.title") }}</a> {{ t("register.agree_and") }} <a href="/privacy" target="_blank">{{ t("privacy.title") }}</a>.</p>
+    </form>
+
+    <p class="acesso-rodape">{{ t("register.have_account") }} <a href="/login">{{ t("nav.login") }}</a></p>
+
+    {% set support = support_link(t("landing.support_message")) %}
+    {% if support %}
+        <p class="acesso-rodape"><a href="{{ support }}" rel="noopener" target="_blank">{{ t("register.support") }}</a></p>
+    {% endif %}
+{% endblock %}
+
+{% block panel %}
+    {% if invite %}
+        <p class="acesso-frase">{{ invite.workspace_name }}</p>
+        <span class="etiqueta-painel">{{ invite.company_name if invite.kind == "customer" else t("role." ~ invite.role) }}</span>
+    {% else %}
+        {# EN: Live preview of the distributor's rack tag (app.js) | PT: Prévia ao vivo da etiqueta da distribuidora (app.js) #}
+        <p class="acesso-frase">{{ t("register.panel_line") }}</p>
+        <div class="etiqueta-previa" data-show-when="distributor">
+            <span class="etiqueta-previa-codigo">D01</span>
+            <span class="etiqueta-previa-nome" data-previa-alvo data-previa-vazio="{{ t('register.panel_placeholder') }}">{{ form.workspace_name or t("register.panel_placeholder") }}</span>
+        </div>
+        <div class="etiqueta-previa" data-show-when="buyer">
+            <span class="etiqueta-previa-codigo">{{ t("nav.portal") }}</span>
+            <span class="etiqueta-previa-nome">{{ t("register.panel_buyer") }}</span>
+        </div>
+    {% endif %}
+{% endblock %}

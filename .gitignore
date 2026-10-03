@@ -1,0 +1,14 @@
+# EN: Never commit: the virtual environment, the local database and its backups, the secret
+#     key (instance/), uploaded logos and Python caches. The database is rebuilt with
+#     "flask --app app init-db" and "python seed.py".
+# PT: Nunca enviar: o ambiente virtual, o banco local e os backups, a chave secreta
+#     (instance/), as logos enviadas e os caches do Python. O banco é recriado com
+#     "flask --app app init-db" e "python seed.py".
+.venv/
+venv/
+__pycache__/
+*.pyc
+project.db
+*.db-journal
+instance/
+static/uploads/

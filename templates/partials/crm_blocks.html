@@ -1,0 +1,138 @@
+{#
+    EN: Reusable CRM blocks (Jinja macros) for the customer and opportunity pages and the tasks
+        page: task list, task form, history entry form and the timeline. Every form posts to
+        tasks.py with a "next" path to come back to the same page.
+    PT: Blocos reutilizáveis do CRM (macros do Jinja) para as páginas de cliente, oportunidade
+        e tarefas: lista de tarefas, formulário de tarefa, formulário de registro e linha do
+        tempo. Todo formulário envia para o tasks.py com um caminho "next" para voltar à mesma página.
+#}
+{% from "partials/icons.html" import icon %}
+
+{# EN: "Export CSV" link, only for owner/admin on plans with the feature (the route checks again)
+   PT: Link "Exportar CSV", só para dono/gerente em planos com o recurso (a rota confere de novo) #}
+{% macro export_button(kind) %}
+    {% if membership and membership.role in ("owner", "admin") and membership.feat_csv_export %}
+        <a class="botao botao-contorno" download href="/export/{{ kind }}.csv">{{ icon("exportar", 18) }}{{ t("export.button") }}</a>
+    {% endif %}
+{% endmacro %}
+
+{# EN: One task row with its urgency as line form | PT: Uma linha de tarefa com a urgência como forma de linha #}
+{% macro task_row(task, next_url, show_link=true) %}
+    <li class="tarefa tarefa-{{ 'done' if task.done_at else (task.bucket or 'aberta') }}">
+        <form action="/tasks/{{ task.id }}/{{ 'reopen' if task.done_at else 'done' }}" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <input name="next" type="hidden" value="{{ next_url }}">
+            <button aria-label="{{ t('tasks.reopen') if task.done_at else t('tasks.complete') }}: {{ task.title }}" aria-pressed="{{ 'true' if task.done_at else 'false' }}" class="tarefa-caixa" type="submit">{% if task.done_at %}{{ icon("certo", 16) }}{% endif %}</button>
+        </form>
+        <span class="tarefa-texto">
+            <strong>{{ task.title }}</strong>
+            <small>
+                {% if task.due_date and not task.done_at %}
+                    <span class="tarefa-prazo">{{ t("tasks.bucket_" ~ task.bucket) if task.bucket in ("overdue", "today") else "" }} {{ task.due_date[8:10] }}/{{ task.due_date[5:7] }}</span> ·
+                {% endif %}
+                {% if show_link %}
+                    {% if task.opportunity_id %}<a href="/opportunities/{{ task.opportunity_id }}">{{ task.opportunity_title }}</a>{% elif task.company_id %}<a href="/customers/{{ task.company_id }}">{{ task.company_name }}</a>{% endif %} ·
+                {% endif %}
+                {{ task.assignee_name or "—" }}
+            </small>
+        </span>
+        {# EN: Delete: the creator or a manager (tasks.delete checks again)
+           PT: Apagar: quem criou ou um gerente (tasks.delete confere de novo) #}
+        {% if membership.role in ("owner", "admin") or task.created_by == current_user.id %}
+            <form action="/tasks/{{ task.id }}/delete" class="tarefa-apagar" data-confirm="{{ t('tasks.confirm_delete') }}" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <input name="next" type="hidden" value="{{ next_url }}">
+                <button aria-label="{{ t('tasks.delete') }}: {{ task.title }}" class="botao-icone botao-mini" type="submit">{{ icon("fechar", 14) }}</button>
+            </form>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{% macro task_form(next_url, company_id=none, opportunity_id=none, companies=none, staff=none) %}
+    <details class="dobra">
+        <summary class="botao botao-contorno botao-pequeno">{{ icon("adicionar", 16) }}{{ t("tasks.new") }}</summary>
+        <form action="/tasks" class="formulario" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <input name="next" type="hidden" value="{{ next_url }}">
+            {% if company_id %}<input name="company_id" type="hidden" value="{{ company_id }}">{% endif %}
+            {% if opportunity_id %}<input name="opportunity_id" type="hidden" value="{{ opportunity_id }}">{% endif %}
+            <div class="campo">
+                <label for="task-title-{{ opportunity_id or company_id or 'livre' }}">{{ t("tasks.title_label") }}</label>
+                <input id="task-title-{{ opportunity_id or company_id or 'livre' }}" maxlength="160" name="title" placeholder="{{ t('tasks.title_placeholder') }}" required type="text">
+            </div>
+            {% if companies is not none %}
+                <div class="campo">
+                    <label for="task-company">{{ t("customers.col_customer") }}</label>
+                    <select id="task-company" name="company_id" required>
+                        <option value="">{{ t("pipeline.choose_customer") }}</option>
+                        {% for c in companies %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <div class="campos-dupla">
+                <div class="campo">
+                    <label for="task-due-{{ opportunity_id or company_id or 'livre' }}">{{ t("tasks.due") }}</label>
+                    <input id="task-due-{{ opportunity_id or company_id or 'livre' }}" name="due_date" type="date">
+                </div>
+                {% if staff %}
+                    <div class="campo">
+                        <label for="task-assignee-{{ opportunity_id or company_id or 'livre' }}">{{ t("tasks.assignee") }}</label>
+                        <select id="task-assignee-{{ opportunity_id or company_id or 'livre' }}" name="assignee_id">
+                            {% for person in staff %}<option {% if person.id == current_user.id %}selected{% endif %} value="{{ person.id }}">{{ person.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+            </div>
+            <button class="botao botao-faixa" type="submit">{{ t("tasks.create") }}</button>
+        </form>
+    </details>
+{% endmacro %}
+
+{% macro entry_form(next_url, company_id, opportunity_id=none) %}
+    <form action="/activities" class="registro" method="post">
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+        <input name="next" type="hidden" value="{{ next_url }}">
+        <input name="company_id" type="hidden" value="{{ company_id }}">
+        {% if opportunity_id %}<input name="opportunity_id" type="hidden" value="{{ opportunity_id }}">{% endif %}
+        {# EN: type chips (note / call / WhatsApp) | PT: tipos em chips (nota / ligação / WhatsApp) #}
+        <div aria-label="{{ t('tasks.entry_type') }}" class="alternador alternador-registro" role="radiogroup">
+            {% for kind in ("note", "call", "whatsapp") %}
+                <label>
+                    <input name="type" type="radio" value="{{ kind }}" {% if loop.first %}checked{% endif %}>
+                    <span>{{ t("activity." ~ kind) }}</span>
+                </label>
+            {% endfor %}
+        </div>
+        <label class="sr-only" for="entry-body-{{ opportunity_id or company_id }}">{{ t("tasks.entry_body") }}</label>
+        <textarea id="entry-body-{{ opportunity_id or company_id }}" maxlength="1000" name="body" placeholder="{{ t('tasks.entry_placeholder') }}" required rows="2"></textarea>
+        <button class="botao botao-contorno botao-pequeno" type="submit">{{ t("tasks.add_entry") }}</button>
+    </form>
+{% endmacro %}
+
+{# EN: Timeline, newest first. Manual entries can be deleted by their author or an admin.
+   PT: Linha do tempo, mais nova primeiro. Registros manuais podem ser apagados pelo autor ou admin. #}
+{% macro timeline(items, next_url, can_admin) %}
+    {% if items %}
+        <ol class="linha-tempo">
+            {% for item in items %}
+                <li>
+                    <span aria-hidden="true" class="linha-tempo-marca marca-{{ item.type }}"></span>
+                    <span class="linha-tempo-texto">
+                        <strong>{{ t("activity." ~ item.type) }}</strong>
+                        <span class="linha-tempo-corpo">{{ item.body }}</span>
+                        <small>{{ item.user_name or "—" }} · {{ item.created_at | local_time }}{% if item.opportunity_title %} · <a href="/opportunities/{{ item.opportunity_id }}">{{ item.opportunity_title }}</a>{% endif %}</small>
+                    </span>
+                    {% if item.type in ("note", "call", "whatsapp") and (can_admin or item.user_id == current_user.id) %}
+                        <form action="/activities/{{ item.id }}/delete" data-confirm="{{ t('tasks.confirm_delete_entry') }}" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <input name="next" type="hidden" value="{{ next_url }}">
+                            <button aria-label="{{ t('customers.delete') }}" class="botao-icone botao-mini" type="submit">{{ icon("fechar", 14) }}</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p class="dica">{{ t("pipeline.no_history") }}</p>
+    {% endif %}
+{% endmacro %}

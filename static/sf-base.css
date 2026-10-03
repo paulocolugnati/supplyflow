@@ -1,0 +1,461 @@
+/*
+ * EN: SupplyFlow shared foundation: font, colour tokens (dark default + light), base browser
+ *     surfaces, type, buttons, the discount ruler and the mechanical counter.
+ *     Used by the landing page (landing.css) and the logged-in app (app.css). See DESIGN.md.
+ * PT: Fundação compartilhada do SupplyFlow: fonte, tokens de cor (escuro padrão + claro),
+ *     superfícies do navegador, tipografia, botões, a régua de desconto e o contador mecânico.
+ *     Usada pela página inicial (landing.css) e pelo sistema logado (app.css). Veja DESIGN.md.
+ */
+
+/* ---------- EN: Font (self-hosted, variable width + weight) | PT: Fonte (local, largura + peso variáveis) ---------- */
+
+@font-face {
+    font-display: swap;
+    font-family: "Archivo";
+    font-stretch: 62% 125%;
+    font-weight: 100 900;
+    src: url("/static/fonts/archivo-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-display: swap;
+    font-family: "Archivo";
+    font-stretch: 62% 125%;
+    font-weight: 100 900;
+    src: url("/static/fonts/archivo-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------- EN: Tokens — dark is the default floor | PT: Tokens — o escuro é o piso padrão ---------- */
+
+:root,
+[data-theme="dark"] {
+    color-scheme: dark;
+    --piso: #0B2A33;          /* EN: epoxy floor | PT: piso de epóxi */
+    --piso-2: #103B46;        /* EN: raised plate (logo principal) | PT: chapa elevada (principal do logo) */
+    --piso-3: #164B58;        /* EN: plate edge | PT: borda da chapa */
+    --tinta: #E9F1EF;         /* EN: chalk ink | PT: tinta de giz */
+    --tinta-2: #A6C2C1;       /* EN: secondary ink (7:1 on --piso) | PT: tinta secundária (7:1 sobre --piso) */
+    --faixa: #35D0BA;         /* EN: the floor lane / accent | PT: a faixa do piso / destaque */
+    --faixa-tinta: #0B2A33;   /* EN: text on the lane color | PT: texto sobre a cor da faixa */
+    --faixa-texto: #35D0BA;   /* EN: accent used as text (only on dark) | PT: destaque usado como texto (só no escuro) */
+    --linha: rgba(233, 241, 239, 0.16);
+    --hachura: rgba(53, 208, 186, 0.32);
+    --hachura-forte: rgba(242, 196, 206, 0.34);
+    --papel: #F4F8F7;         /* EN: quote paper | PT: papel do orçamento */
+    --papel-tinta: #17252D;
+    --logo-ink: #E9F1EF;
+    --logo-name: #E9F1EF;
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+    --piso: #F4F8F7;          /* EN: daylit concrete | PT: concreto à luz do dia */
+    --piso-2: #E7EFED;
+    --piso-3: #D3E0DD;
+    --tinta: #17252D;
+    --tinta-2: #3E5660;       /* EN: 7.4:1 on --piso | PT: 7,4:1 sobre --piso */
+    --faixa: #35D0BA;
+    --faixa-tinta: #0B2A33;
+    --faixa-texto: #0E6B5E;   /* EN: darker aqua so text passes AA | PT: verde-água escuro para o texto passar no AA */
+    --linha: rgba(23, 37, 45, 0.14);
+    --hachura: rgba(16, 59, 70, 0.22);
+    --hachura-forte: rgba(16, 59, 70, 0.4);
+    --papel: #FFFFFF;
+    --papel-tinta: #17252D;
+    --logo-ink: #103B46;
+    --logo-name: #17252D;
+}
+
+:root {
+    /* EN: Iridescent fringe: color only on hairline edges (Borda Iridescente discipline)
+       PT: Franja iridescente: cor só em bordas finíssimas (disciplina da Borda Iridescente) */
+    --franja: linear-gradient(90deg, #9EF0DE, #35D0BA 35%, #F2C4CE 70%, #C7C2F2);
+    --franja-v: linear-gradient(180deg, #9EF0DE, #35D0BA 35%, #F2C4CE 70%, #C7C2F2);
+
+    /* EN: Spacing scale (pallet module, 8px base) | PT: Escala de espaço (módulo de palete, base 8px) */
+    --e1: 8px;
+    --e2: 16px;
+    --e3: 24px;
+    --e4: 40px;
+    --e5: 64px;
+    --e6: 104px;
+    --e7: 168px;
+
+    --trilho-largura: 132px;
+    --topo-altura: 68px;
+    --raio: 2px;
+    --suave: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- EN: Base | PT: Base ---------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--piso);
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--topo-altura);
+}
+
+body {
+    background: var(--fx-fundo, var(--piso));
+    caret-color: var(--faixa);
+    color: var(--fx-tinta, var(--tinta));
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 18px;
+    font-stretch: 100%;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.55;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+}
+
+/* EN: Themed scrollbar | PT: Barra de rolagem no tema */
+html {
+    scrollbar-color: var(--piso-3) var(--piso);
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--piso);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--piso-3);
+    border: 2px solid var(--piso);
+}
+
+a {
+    color: inherit;
+    text-decoration-color: var(--faixa);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.22em;
+}
+
+:focus-visible {
+    outline: 2px solid var(--faixa);
+    outline-offset: 4px;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0;
+    text-wrap: balance;
+}
+
+p {
+    margin: 0;
+    text-wrap: pretty;
+}
+
+.sr-only {
+    clip: rect(0 0 0 0);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+/* EN: Skip link, visible on keyboard focus | PT: Link "pular", visível no foco do teclado */
+.pular {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+    font-weight: 700;
+    left: var(--e2);
+    padding: var(--e1) var(--e2);
+    position: fixed;
+    top: -100px;
+    z-index: 100;
+}
+
+.pular:focus {
+    top: var(--e2);
+}
+
+/* ---------- EN: Type | PT: Tipografia ---------- */
+
+/* EN: Floor-stencil display: Archivo at its widest | PT: Letreiro de piso: Archivo na largura máxima */
+.titulo-mestre .linha {
+    display: block;
+}
+
+.titulo-mestre {
+    font-size: clamp(2.5rem, 6.4vw, 6rem);
+    font-stretch: 125%;
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 0.98;
+}
+
+.titulo {
+    font-size: clamp(2rem, 4.2vw, 3.5rem);
+    font-stretch: 118%;
+    font-weight: 780;
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+}
+
+.apoio {
+    color: var(--tinta-2);
+    font-size: clamp(1.06rem, 1.4vw, 1.25rem);
+    max-width: 58ch;
+}
+
+/* EN: Rack-address label: condensed, tracked caps | PT: Etiqueta de endereço: condensada, caixa-alta espaçada */
+.etiqueta-endereco,
+.trilho-codigo,
+.etiqueta-exemplo,
+.orcamento-numero {
+    font-stretch: 72%;
+    font-weight: 650;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.etiqueta-exemplo {
+    border: 1px dashed currentColor;
+    color: var(--tinta-2);
+    font-size: 0.68rem;
+    padding: 2px 6px;
+}
+
+/* ---------- EN: Buttons | PT: Botões ---------- */
+
+/* EN: The primary action is a painted block of the floor lane | PT: A ação principal é um bloco pintado da faixa */
+.botao {
+    align-items: center;
+    border: 0;
+    border-radius: var(--raio);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-stretch: 108%;
+    font-weight: 720;
+    gap: var(--e1);
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 var(--e3);
+    position: relative;
+    text-decoration: none;
+    transition: transform 0.4s var(--suave), box-shadow 0.4s var(--suave), background 0.3s ease;
+}
+
+.botao-faixa {
+    background: var(--faixa);
+    box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.55);
+    color: var(--faixa-tinta);
+}
+
+/* EN: Iridescent hairline under the painted block | PT: Linha iridescente sob o bloco pintado */
+.botao-faixa::after {
+    background: var(--franja);
+    bottom: -3px;
+    content: "";
+    height: 1px;
+    left: 0;
+    opacity: 0.9;
+    position: absolute;
+    right: 0;
+}
+
+.botao-faixa:hover {
+    box-shadow: 0 16px 28px -12px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px);
+}
+
+.botao-faixa:active {
+    transform: translateY(0);
+}
+
+.botao-contorno {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--tinta);
+    color: var(--tinta);
+}
+
+.botao-contorno:hover {
+    background: var(--tinta);
+    color: var(--piso);
+}
+
+.botao-pequeno {
+    font-size: 0.92rem;
+    min-height: 40px;
+    padding: 0 var(--e2);
+}
+
+.botao-grande {
+    font-size: 1.15rem;
+    min-height: 64px;
+    padding: 0 var(--e4);
+}
+
+.link-faixa {
+    color: var(--tinta);
+    font-weight: 620;
+    text-decoration-line: underline;
+}
+
+.link-faixa:hover {
+    color: var(--faixa-texto);
+}
+
+.acoes {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e3);
+}
+
+/* ---------- EN: Discount ruler | PT: Régua de desconto ---------- */
+
+/* EN: 0%–20% scale. Ticks every 1%, longer every 5%. Stop zones hatched like a floor no-go area.
+   PT: Escala de 0% a 20%. Marca a cada 1%, maior a cada 5%. Zonas de parada hachuradas como área proibida do piso. */
+.regua {
+    --em: 5%;   /* EN: 1% of discount = 5% of the ruler width | PT: 1% de desconto = 5% da largura da régua */
+    margin: 0;
+    position: relative;
+}
+
+.regua-corpo {
+    background:
+        repeating-linear-gradient(90deg, var(--tinta-2) 0 1px, transparent 1px calc(var(--em) * 5)) 0 0 / 100% 100% no-repeat,
+        repeating-linear-gradient(90deg, var(--linha) 0 1px, transparent 1px var(--em)) 0 0 / 100% 55% no-repeat;
+    border-top: 2px solid var(--tinta);
+    height: 56px;
+    position: relative;
+}
+
+.regua-zona {
+    bottom: 0;
+    position: absolute;
+    top: 0;
+}
+
+.zona-gerente {
+    background: repeating-linear-gradient(-45deg, var(--hachura) 0 2px, transparent 2px 10px);
+    left: calc(var(--em) * 5);
+    width: calc(var(--em) * 10);
+}
+
+.zona-dono {
+    background: repeating-linear-gradient(-45deg, var(--hachura-forte) 0 3px, transparent 3px 8px);
+    left: calc(var(--em) * 15);
+    right: 0;
+}
+
+/* EN: Stops: physical bars with the iridescent fringe | PT: Batentes: barras físicas com a franja iridescente */
+.regua-batente {
+    background: var(--tinta);
+    bottom: -10px;
+    position: absolute;
+    top: -14px;
+    width: 4px;
+}
+
+.regua-batente::after {
+    background: var(--franja-v);
+    bottom: 0;
+    content: "";
+    left: 5px;
+    opacity: 0.85;
+    position: absolute;
+    top: 0;
+    width: 1px;
+}
+
+.batente-5 {
+    left: calc(var(--em) * 5 - 2px);
+}
+
+.batente-15 {
+    left: calc(var(--em) * 15 - 2px);
+}
+
+.regua-legenda {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    font-stretch: 80%;
+    font-weight: 560;
+    height: 2.4em;
+    margin-top: var(--e2);
+    position: relative;
+}
+
+.regua-legenda span {
+    position: absolute;
+    white-space: nowrap;
+}
+
+.regua-legenda b {
+    color: var(--tinta);
+}
+
+.legenda-5 {
+    left: calc(var(--em) * 5 + 12px);
+}
+
+.legenda-15 {
+    left: calc(var(--em) * 15 + 12px);
+}
+
+.regua-entrada {
+    margin-left: auto;
+    max-width: 920px;
+    width: 100%;
+}
+
+/* ---------- EN: Mechanical counter (signature) | PT: Contador mecânico (assinatura) ---------- */
+
+/* EN: Each digit is a vertical strip 0–9 that rolls to its value, like an odometer
+   PT: Cada dígito é uma fita vertical de 0 a 9 que gira até o valor, como um odômetro */
+.contador {
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* EN: Every piece (wheel or still symbol) shares one line box, and spaces are kept
+   PT: Toda peça (roda ou símbolo parado) divide a mesma linha, e os espaços são mantidos */
+.contador > span {
+    height: 1.15em;
+    line-height: 1.15em;
+    white-space: pre;
+}
+
+.contador-roda {
+    display: inline-block;
+    height: 1.15em;
+    line-height: 1.15em;
+    overflow: hidden;
+    position: relative;
+    vertical-align: bottom;
+}
+
+.contador-fita {
+    display: flex;
+    flex-direction: column;
+    transform: translateY(calc(var(--digito, 0) * -1.15em));
+    transition: transform 0.7s var(--suave);
+    transition-delay: var(--atraso, 0ms);
+}
+
+.contador-fita span {
+    height: 1.15em;
+}

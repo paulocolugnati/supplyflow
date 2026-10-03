@@ -1,0 +1,43 @@
+{#
+    EN: Landing page of an invite link. Three cases:
+        1. logged out             -> create account or log in
+        2. logged in, same email  -> accept button
+        3. logged in, other email -> warning (the invite belongs to someone else)
+    PT: Página de chegada do link de convite. Três casos:
+        1. deslogado                  -> criar conta ou entrar
+        2. logado com o mesmo e-mail  -> botão de aceitar
+        3. logado com outro e-mail    -> aviso (o convite é de outra pessoa)
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("invite.title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    {% if invite.kind == "customer" %}
+        <h1 class="titulo-pagina">{{ t("invite.buyer_title").replace("{workspace}", invite.workspace_name) }}</h1>
+        <p class="subtitulo">{{ t("invite.buyer_as").replace("{company}", invite.company_name) }} · {{ invite.email }}</p>
+    {% else %}
+        <h1 class="titulo-pagina">{{ t("invite.page_title") }} {{ invite.workspace_name }}</h1>
+        <p class="subtitulo">{{ t("invite.as") | capitalize }} <strong>{{ t("role." ~ invite.role) }}</strong> · {{ invite.email }}</p>
+    {% endif %}
+
+    {% if not current_user %}
+        <div class="acoes-coluna">
+            <a class="botao botao-faixa botao-largo" href="/register?invite={{ token }}">{{ t("invite.create_account") }}</a>
+            <a class="botao botao-contorno botao-largo" href="/login?next={{ ('/invite/' ~ token) | urlencode }}">{{ t("invite.have_account") }}</a>
+        </div>
+    {% elif email_matches %}
+        <form action="/invite/{{ token }}/accept" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <button class="botao botao-faixa botao-largo" type="submit">{{ t("invite.accept") }}</button>
+        </form>
+    {% else %}
+        <div class="aviso aviso-atencao" role="alert">{{ icon("alerta", 18) }}<p>{{ t("team.error_wrong_email") }} ({{ current_user.email }})</p></div>
+    {% endif %}
+{% endblock %}
+
+{% block panel %}
+    <p class="acesso-frase">{{ invite.workspace_name }}</p>
+    <span class="etiqueta-painel">{{ invite.company_name if invite.kind == "customer" else t("role." ~ invite.role) }}</span>
+{% endblock %}

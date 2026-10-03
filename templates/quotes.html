@@ -1,0 +1,74 @@
+{#
+    EN: All quotes of the workspace. A quote is always born from an opportunity, so the
+        "new" button lives on the opportunity page; this list links there when empty.
+    PT: Todos os orçamentos da distribuidora. Um orçamento sempre nasce de uma oportunidade,
+        então o botão "novo" fica na página da oportunidade; esta lista aponta para lá quando vazia.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import export_button with context %}
+
+{% block title %}{{ t("quotes.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("quotes.title") }}</h1>
+            <p class="subtitulo">{{ quotes | length }} {{ t("quotes.count_suffix") }}</p>
+        </div>
+        <div class="acoes-linha">
+            {{ export_button("quotes") }}
+            {% if not can_add %}<span class="tag-plano">{{ t("quotes.quota_short") }}</span>{% endif %}
+        </div>
+    </header>
+
+    <form action="/quotes" class="filtros" method="get">
+        <div class="campo">
+            <label class="sr-only" for="status">{{ t("products.status") }}</label>
+            <select id="status" name="status">
+                <option value="">{{ t("quotes.all_status") }}</option>
+                {% for s in ("draft", "pending_approval", "ready", "sent", "accepted", "declined", "expired", "cancelled") %}
+                    <option {% if status == s %}selected{% endif %} value="{{ s }}">{{ t("quotes.status_" ~ s) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="botao botao-contorno" type="submit">{{ t("customers.filter") }}</button>
+    </form>
+
+    {% if quotes %}
+        <section class="chapa chapa-tabela">
+            <table class="tabela tabela-orcamentos">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ t("quotes.quote") }}</th>
+                        <th scope="col">{{ t("products.status") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("quotes.effective_discount") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("landing.total_final") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in quotes %}
+                        <tr>
+                            <td>
+                                <a class="link-linha" href="/quotes/{{ q.id }}"><strong>#{{ "%04d" | format(q.number) }} · {{ q.company_name }}</strong></a>
+                                <small class="celula-sub">{{ q.opportunity_title }} · {{ q.item_count }} {{ t("quotes.items_suffix") }} · {{ q.creator_name or "—" }}</small>
+                            </td>
+                            <td><span class="estado-orcamento estado-{{ q.status }}"><span aria-hidden="true" class="estado-traco"></span>{{ t("quotes.status_" ~ q.status) }}</span></td>
+                            <td class="coluna-numero" data-rotulo="{{ t('quotes.effective_discount') }}">{{ q.effective_discount_bps | pct }}</td>
+                            <td class="coluna-numero" data-rotulo="{{ t('landing.total_final') }}"><b>{{ q.final_total_cents | brl }}</b></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% else %}
+        <section class="vazio chapa">
+            <span aria-hidden="true" class="vazio-faixa"></span>
+            <h2 class="titulo-secao">{{ t("quotes.empty_title") }}</h2>
+            <p>{{ t("quotes.empty_text") }}</p>
+            <a class="botao botao-faixa" href="/pipeline">{{ icon("funil", 18) }}{{ t("quotes.go_pipeline") }}</a>
+        </section>
+    {% endif %}
+
+{% endblock %}

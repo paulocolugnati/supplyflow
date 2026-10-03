@@ -1,0 +1,359 @@
+{#
+    EN: Quote builder / view. One form saves every line plus the quote-wide fields; "remove"
+        buttons reuse that form with formaction (forms can't be nested). The totals plate is
+        recalculated live by app.js with the same rules as pricing.py, and the server
+        recalculates everything again on save. The ruler shows where the effective discount
+        sits against the team's ceilings; the state panel shows the one right action for each
+        moment (finish, ask for approval, send, back to editing).
+    PT: Montador / visualização do orçamento. Um formulário salva todas as linhas e os campos
+        gerais; os botões "remover" reaproveitam esse formulário com formaction (formulários não
+        podem ser aninhados). A chapa de totais é recalculada ao vivo pelo app.js com as mesmas
+        regras do pricing.py, e o servidor recalcula tudo de novo ao salvar. A régua mostra onde
+        o desconto efetivo está em relação aos tetos da equipe; o painel de estado mostra a ação
+        certa para cada momento (concluir, pedir aprovação, enviar, voltar para edição).
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("quotes.quote") }} #{{ "%04d" | format(quote.number) }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("quotes.quote") }} #{{ "%04d" | format(quote.number) }}</h1>
+            <p class="subtitulo">
+                <a href="/customers/{{ quote.company_id }}">{{ info.company_name }}</a> ·
+                <a href="/opportunities/{{ quote.opportunity_id }}">{{ info.opportunity_title }}</a>
+            </p>
+        </div>
+        <div class="acoes-linha">
+            <span class="estado-orcamento estado-{{ quote.status }}"><span aria-hidden="true" class="estado-traco"></span>{{ t("quotes.status_" ~ quote.status) }}</span>
+            {# EN: The A4 document for the customer (documents.py) | PT: O documento A4 para o cliente (documents.py) #}
+            <a class="botao botao-contorno botao-pequeno" href="/quotes/{{ quote.id }}/document">{{ icon("exportar", 16) }}{{ t("quotes.download_pdf") }}</a>
+        </div>
+    </header>
+
+    {# EN: State panel: what this quote needs next, with the one right action
+       PT: Painel de estado: o que este orçamento precisa agora, com a ação certa #}
+    <section aria-labelledby="concluir-titulo" class="chapa painel-estado estado-painel-{{ quote.status }}" id="concluir">
+        <h2 class="sr-only" id="concluir-titulo">{{ t("quotes.next_step") }}</h2>
+
+        {% if quote.status == "draft" %}
+            {# EN: Items without cost and a discount: first warning (the second is the confirm on submit)
+               PT: Itens sem custo e com desconto: primeiro aviso (o segundo é a confirmação ao concluir) #}
+            {% if unpriced %}
+                <div class="aviso-sem-custo" role="note">
+                    <strong>{{ t("quotes.unpriced_title") }}</strong>
+                    <p>{{ t("quotes.unpriced_text").replace("{items}", unpriced | join(", ")) }}</p>
+                </div>
+            {% endif %}
+            {% set confirm_unpriced = t("quotes.unpriced_confirm") if unpriced else "" %}
+            {% if not items %}
+                <div class="estado-mensagem">
+                    <span aria-hidden="true" class="estado-traco"></span>
+                    <strong>{{ t("quotes.add_items_first") }}</strong>
+                </div>
+            {% elif reasons %}
+                <div class="estado-mensagem">
+                    <span aria-hidden="true" class="estado-traco estado-traco-alerta"></span>
+                    <div>
+                        {% if "discount" not in reasons %}
+                            {% set title_key = "quotes.needs_approval_margin" %}
+                        {% elif creator_is_me %}
+                            {% set title_key = "quotes.needs_approval" %}
+                        {% else %}
+                            {% set title_key = "quotes.needs_approval_other" %}
+                        {% endif %}
+                        <strong id="concluir-msg">{{ t(title_key).replace("{role}", t("role." ~ needed_role)).replace("{name}", info.creator_name or "—").replace("{creator_role}", t("role." ~ creator_role)) }}</strong>
+                        <ul class="motivos">
+                            {% if "discount" in reasons %}<li>{{ t("quotes.reason_discount") if creator_is_me else t("quotes.reason_discount_other").replace("{name}", info.creator_name or "—") }} ({{ quote.effective_discount_bps | pct }})</li>{% endif %}
+                            {% if "margin" in reasons %}<li>{{ t("quotes.reason_margin").replace("{min}", membership.min_margin_bps | pct) }} ({{ quote.margin_bps | pct }})</li>{% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% if can_act %}
+                    <form action="/quotes/{{ quote.id }}/submit" class="formulario" data-concluir {% if confirm_unpriced %}data-confirm="{{ confirm_unpriced }}"{% endif %} method="post">
+                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                        <div class="campo">
+                            <label for="reason">{{ t("quotes.reason_label") if "discount" in reasons else t("quotes.reason_label_margin") }}</label>
+                            <textarea id="reason" maxlength="300" minlength="3" name="reason" placeholder="{{ t('quotes.reason_placeholder') }}" required rows="2"></textarea>
+                        </div>
+                        <div class="acoes-linha">
+                            <button class="botao botao-faixa" type="submit">{{ t("quotes.ask_approval") }}</button>
+                            <span class="dica" data-salvar-antes hidden>{{ t("quotes.save_first") }}</span>
+                        </div>
+                    </form>
+                {% endif %}
+            {% else %}
+                <div class="estado-mensagem">
+                    <span aria-hidden="true" class="estado-traco estado-traco-ok"></span>
+                    <strong>{{ t("quotes.within_ceiling") if creator_is_me else t("quotes.within_ceiling_other").replace("{name}", info.creator_name or "—") }}</strong>
+                </div>
+                {% if can_act %}
+                    <form action="/quotes/{{ quote.id }}/submit" data-concluir {% if confirm_unpriced %}data-confirm="{{ confirm_unpriced }}"{% endif %} method="post">
+                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                        <div class="acoes-linha">
+                            <button class="botao botao-faixa" type="submit">{{ t("quotes.finish") }}</button>
+                            <span class="dica" data-salvar-antes hidden>{{ t("quotes.save_first") }}</span>
+                        </div>
+                    </form>
+                {% endif %}
+            {% endif %}
+
+        {% elif quote.status == "pending_approval" and last_request %}
+            <div class="estado-mensagem">
+                <span aria-hidden="true" class="estado-traco"></span>
+                <div>
+                    <strong>{{ t("quotes.waiting").replace("{role}", t("role." ~ last_request.required_role)) }}</strong>
+                    <p class="dica">{{ t("quotes.asked_by") }} {{ last_request.requester_name }} · {{ last_request.requested_discount_bps | pct }} · “{{ last_request.reason }}”</p>
+                </div>
+            </div>
+            {% if can_act %}
+                <form action="/quotes/{{ quote.id }}/reopen" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <button class="botao botao-contorno" type="submit">{{ t("quotes.back_to_edit") }}</button>
+                </form>
+            {% endif %}
+
+        {% elif quote.status == "ready" %}
+            <div class="estado-mensagem">
+                <span aria-hidden="true" class="estado-traco estado-traco-ok"></span>
+                <div>
+                    <strong>{{ t("quotes.ready_msg") }}</strong>
+                    {% if quote.approved_discount_bps is not none %}
+                        <p class="dica">{{ t("quotes.approved_exact").replace("{pct}", quote.approved_discount_bps | pct) }}{% if last_request and last_request.decision_note %} · “{{ last_request.decision_note }}”{% endif %}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% if can_act %}
+                <div class="acoes-linha">
+                    <form action="/quotes/{{ quote.id }}/send" method="post">
+                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                        <button class="botao botao-faixa" type="submit">{{ icon("mensagem", 18) }}{{ t("quotes.send") }}</button>
+                    </form>
+                    <form action="/quotes/{{ quote.id }}/reopen" data-confirm="{{ t('quotes.confirm_reopen') }}" method="post">
+                        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                        <button class="botao botao-contorno" type="submit">{{ t("quotes.back_to_edit") }}</button>
+                    </form>
+                </div>
+            {% endif %}
+
+        {% elif quote.status == "sent" %}
+            <div class="estado-mensagem">
+                <span aria-hidden="true" class="estado-traco"></span>
+                <div>
+                    <strong>{{ t("quotes.sent_msg") }}</strong>
+                    <p class="dica">{{ quote.sent_at | local_time }} · {{ t("quotes.valid_until") }} {{ quote.valid_until[8:10] }}/{{ quote.valid_until[5:7] }}</p>
+                </div>
+            </div>
+            <a class="botao botao-faixa" href="{{ share }}" rel="noopener" target="_blank">{{ icon("mensagem", 18) }}{{ t("quotes.share_whatsapp") }}</a>
+
+        {% else %}
+            <div class="estado-mensagem">
+                <span aria-hidden="true" class="estado-traco"></span>
+                <strong>{{ t("quotes.final_" ~ quote.status) }}</strong>
+            </div>
+        {% endif %}
+
+        {# EN: Secondary actions | PT: Ações secundárias #}
+        <div class="acoes-secundarias">
+            <form action="/quotes/{{ quote.id }}/duplicate" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <button class="botao-texto" type="submit">{{ icon("copiar", 16) }}<span>{{ t("quotes.duplicate") }}</span></button>
+            </form>
+            {% if can_act and quote.status not in ("accepted", "declined", "expired", "cancelled") %}
+                <form action="/quotes/{{ quote.id }}/cancel" data-confirm="{{ t('quotes.confirm_cancel') }}" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <button class="botao-texto botao-perigo" type="submit">{{ t("quotes.cancel") }}</button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="grade-orcamento">
+
+        <div class="orcamento-corpo">
+
+            {# EN: Items + quote-wide fields, one form | PT: Itens + campos gerais, um formulário #}
+            {# EN: Draft kept on this device (app.js): if the connection drops before saving, nothing is lost
+               PT: Rascunho guardado neste aparelho (app.js): se a internet cair antes de salvar, nada se perde #}
+            {% if editable %}
+            <div class="aviso-rascunho" data-rascunho-aviso hidden role="status">
+                <span data-rascunho-texto data-modelo="{{ t('quotes.draft_found') }}"></span>
+                <div class="acoes-linha">
+                    <button class="botao botao-faixa botao-pequeno" data-rascunho-restaurar type="button">{{ t("quotes.draft_restore") }}</button>
+                    <button class="botao-texto" data-rascunho-descartar type="button">{{ t("quotes.draft_discard") }}</button>
+                </div>
+            </div>
+            {% endif %}
+            <form action="/quotes/{{ quote.id }}" class="chapa" data-orcamento {% if editable %}data-rascunho="sf-orcamento-{{ quote.id }}"{% endif %} method="post" novalidate>
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <h2 class="titulo-secao" id="itens">{{ t("quotes.items") }}</h2>
+
+                {% if items %}
+                    <table class="tabela tabela-itens">
+                        <thead>
+                            <tr>
+                                <th scope="col">{{ t("products.col_product") }}</th>
+                                <th class="coluna-numero" scope="col">{{ t("landing.col_qty") }}</th>
+                                <th class="coluna-numero" scope="col">{{ t("quotes.discount") }}</th>
+                                <th class="coluna-numero" scope="col">{{ t("quotes.line_total") }}</th>
+                                {% if editable %}<th class="coluna-acao" scope="col"><span class="sr-only">{{ t("team.actions") }}</span></th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                                <tr data-item data-preco="{{ item.list_price_cents }}" data-custo="{{ item.cost_cents if item.cost_cents is not none else '' }}">
+                                    <td>
+                                        <strong>{{ item.product_name }}</strong>
+                                        <small class="celula-sub">{{ item.list_price_cents | brl }} / {{ item.unit }} · {{ t("quotes.list_price") | lower }}</small>
+                                    </td>
+                                    <td class="coluna-numero" data-rotulo="{{ t('landing.col_qty') }}">
+                                        {% if editable %}
+                                            <input aria-label="{{ t('landing.col_qty') }}: {{ item.product_name }}" class="entrada-curta" data-quantidade inputmode="numeric" maxlength="6" name="quantity_{{ item.id }}" type="text" value="{{ item.quantity }}">
+                                        {% else %}{{ item.quantity }}{% endif %}
+                                    </td>
+                                    <td class="coluna-numero" data-rotulo="{{ t('quotes.discount') }}">
+                                        {% if editable %}
+                                            <span class="entrada-sufixo entrada-sufixo-curta">
+                                                <input aria-label="{{ t('quotes.discount') }}: {{ item.product_name }}" data-desconto inputmode="decimal" maxlength="6" name="discount_{{ item.id }}" type="text" value="{{ item.discount_bps | pct | replace('%', '') }}">
+                                                <span aria-hidden="true">%</span>
+                                            </span>
+                                        {% else %}{{ item.discount_bps | pct }}{% endif %}
+                                    </td>
+                                    <td class="coluna-numero" data-rotulo="{{ t('quotes.line_total') }}"><b data-linha-total>{{ item.line_total_cents | brl }}</b></td>
+                                    {% if editable %}
+                                        <td class="coluna-acao">
+                                            <button aria-label="{{ t('quotes.remove') }} {{ item.product_name }}" class="botao-icone botao-mini botao-perigo" formaction="/quotes/{{ quote.id }}/items/{{ item.id }}/delete" formnovalidate type="submit">{{ icon("fechar", 16) }}</button>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="dica">{{ t("quotes.no_items") }}</p>
+                {% endif %}
+
+                <div class="campos-orcamento">
+                    <div class="campo">
+                        <label for="header_discount">{{ t("quotes.header_discount") }}</label>
+                        {% if editable %}
+                            <div class="entrada-sufixo">
+                                <input data-desconto-geral id="header_discount" inputmode="decimal" maxlength="6" name="header_discount" type="text" value="{{ quote.header_discount_bps | pct | replace('%', '') }}">
+                                <span aria-hidden="true">%</span>
+                            </div>
+                        {% else %}<b>{{ quote.header_discount_bps | pct }}</b>{% endif %}
+                    </div>
+                    <div class="campo">
+                        <label for="valid_until">{{ t("quotes.valid_until") }}</label>
+                        {% if editable %}
+                            <input id="valid_until" min="{{ today }}" name="valid_until" type="date" value="{{ quote.valid_until }}">
+                        {% else %}<b>{{ quote.valid_until[8:10] }}/{{ quote.valid_until[5:7] }}/{{ quote.valid_until[0:4] }}</b>{% endif %}
+                    </div>
+                    <div class="campo campo-inteiro">
+                        <label for="notes_customer">{{ t("quotes.notes_customer") }}</label>
+                        {% if editable %}
+                            <textarea id="notes_customer" maxlength="1000" name="notes_customer" rows="2">{{ quote.notes_customer or "" }}</textarea>
+                        {% else %}<p>{{ quote.notes_customer or "—" }}</p>{% endif %}
+                    </div>
+                    <div class="campo campo-inteiro">
+                        <label for="notes_internal">{{ t("quotes.notes_internal") }} <small class="dica-inline">({{ t("quotes.internal_hint") }})</small></label>
+                        {% if editable %}
+                            <textarea id="notes_internal" maxlength="1000" name="notes_internal" rows="2">{{ quote.notes_internal or "" }}</textarea>
+                        {% else %}<p>{{ quote.notes_internal or "—" }}</p>{% endif %}
+                    </div>
+                </div>
+
+                {% if editable %}
+                    <div class="acoes-linha">
+                        <button class="botao botao-faixa" type="submit">{{ t("quotes.save") }}</button>
+                        <span class="dica" data-aviso-alterado hidden>{{ t("quotes.unsaved") }}</span>
+                    </div>
+                {% endif %}
+            </form>
+
+            {# EN: Add a product (separate form) | PT: Adicionar produto (formulário separado) #}
+            {% if editable %}
+                <form action="/quotes/{{ quote.id }}/items" class="chapa adicionar-item" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    <h2 class="titulo-secao">{{ t("quotes.add_product") }}</h2>
+                    {% if products %}
+                        <div class="adicionar-item-campos">
+                            <div class="campo campo-produto">
+                                <label for="product_id">{{ t("products.col_product") }}</label>
+                                <select id="product_id" name="product_id" required>
+                                    {% for p in products %}
+                                        <option value="{{ p.id }}">{{ p.name }} · {{ p.price_cents | brl }}/{{ p.unit }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label for="new-quantity">{{ t("landing.col_qty") }}</label>
+                                <input class="entrada-curta" id="new-quantity" inputmode="numeric" maxlength="6" name="quantity" type="text" value="1">
+                            </div>
+                            <div class="campo">
+                                <label for="new-discount">{{ t("quotes.discount") }}</label>
+                                <div class="entrada-sufixo entrada-sufixo-curta">
+                                    <input id="new-discount" inputmode="decimal" maxlength="6" name="discount" type="text" value="0">
+                                    <span aria-hidden="true">%</span>
+                                </div>
+                            </div>
+                            <button class="botao botao-contorno" type="submit">{{ icon("adicionar", 18) }}{{ t("quotes.add") }}</button>
+                        </div>
+                    {% else %}
+                        <p class="dica">{{ t("quotes.no_products") }} <a href="/products">{{ t("nav.products") }}</a></p>
+                    {% endif %}
+                </form>
+            {% endif %}
+        </div>
+
+        {# EN: Totals plate, sticky on desktop | PT: Chapa de totais, fixa no computador #}
+        {% set ceiling_seller = membership.member_discount_limit_bps %}
+        {% set ceiling_manager = membership.admin_discount_limit_bps %}
+        {% set escala = 20 if ceiling_manager <= 1500 else ((ceiling_manager // 500) + 1) * 5 %}
+        <aside aria-label="{{ t('quotes.totals') }}" class="chapa totais-orcamento" data-totais>
+            <dl class="totais">
+                <div><dt>{{ t("quotes.list_total") }}</dt><dd><span class="contador" data-total="tabela">{{ quote.list_total_cents | brl }}</span></dd></div>
+                <div><dt>{{ t("quotes.effective_discount") }}</dt><dd><span class="contador" data-total="desconto">{{ quote.effective_discount_bps | pct }}</span></dd></div>
+                <div><dt>{{ t("products.margin") }}</dt><dd><span class="contador" data-total="margem">{{ quote.margin_bps | pct if quote.margin_bps is not none else "—" }}</span></dd></div>
+                <div class="total-final-app"><dt>{{ t("landing.total_final") }}</dt><dd><span class="contador" data-total="final">{{ quote.final_total_cents | brl }}</span></dd></div>
+            </dl>
+
+            {% if result.has_unpriced_cost and items %}
+                <p class="dica">{{ t("quotes.partial_margin") }}</p>
+            {% endif %}
+
+            <figure aria-label="{{ t('quotes.ruler_label') }}" class="regua regua-dinamica regua-orcamento{% if reasons %} regua-acima{% endif %}" data-regua-orcamento style="--escala: {{ escala }}; --vendedor: {{ ceiling_seller / 100 }}; --gerente: {{ ceiling_manager / 100 }}; --ponteiro: {{ [quote.effective_discount_bps / 100, escala] | min }};">
+                <div aria-hidden="true" class="regua-corpo">
+                    <span class="regua-zona zona-gerente"></span>
+                    <span class="regua-zona zona-dono"></span>
+                    <span class="regua-batente batente-vendedor"></span>
+                    <span class="regua-batente batente-gerente"></span>
+                    <span class="regua-ponteiro-app"></span>
+                </div>
+                <figcaption class="regua-legenda">
+                    <span class="legenda-vendedor">{{ t("landing.stop_seller") }} <b>{{ ceiling_seller | pct }}</b></span>
+                    <span class="legenda-gerente">{{ t("landing.stop_manager") }} <b>{{ ceiling_manager | pct }}</b></span>
+                </figcaption>
+            </figure>
+
+            <p class="meta-orcamento">{{ t("quotes.created_by") }} {{ info.creator_name or "—" }} · {{ quote.created_at | local_time }}</p>
+
+            {% if history %}
+                <h3 class="titulo-secao titulo-menor">{{ t("pipeline.history") }}</h3>
+                <ol class="linha-tempo">
+                    {% for item in history %}
+                        <li>
+                            <span aria-hidden="true" class="linha-tempo-marca marca-{{ item.type }}"></span>
+                            <span><strong>{{ t("activity." ~ item.type) }}</strong><small>{{ item.body }} · {{ item.user_name or "—" }} · {{ item.created_at | local_time }}</small></span>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+        </aside>
+
+    </div>
+
+{% endblock %}

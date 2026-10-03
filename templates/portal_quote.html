@@ -1,0 +1,109 @@
+{#
+    EN: A quote as the buyer sees it (portal.py). The decision comes first: total, days left
+        and the two buttons fit the first screen of a phone. Then the items as a delivery
+        note (romaneio), the totals, and who to talk to (seller + distributor's WhatsApp).
+        Only buyer-safe columns reach this template: never cost, margin or internal notes.
+    PT: Um orçamento como o comprador vê (portal.py). A decisão vem primeiro: total, dias
+        restantes e os dois botões cabem na primeira tela do celular. Depois os itens como um
+        romaneio, os totais, e com quem falar (vendedor + WhatsApp da distribuidora).
+        Só colunas seguras chegam neste template: nunca custo, margem ou notas internas.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("quotes.quote") }} #{{ "%04d" | format(quote.number) }} · {{ quote.workspace_name }}{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            {% if quote.workspace_logo %}<img alt="{{ quote.workspace_name }}" class="logo-distribuidora" src="{{ quote.workspace_logo }}">{% endif %}
+            <h1 class="titulo-pagina">{{ t("quotes.quote") }} #{{ "%04d" | format(quote.number) }}</h1>
+            <p class="subtitulo">{{ quote.workspace_name }} · {{ t("portal.for") }} {{ quote.company_name }} · <a href="/portal">{{ t("portal.back") }}</a></p>
+        </div>
+        <div class="acoes-linha">
+            <span class="estado-orcamento estado-{{ quote.status }}"><span aria-hidden="true" class="estado-traco"></span>{{ t("quotes.status_" ~ quote.status) }}</span>
+            <a class="botao botao-contorno botao-pequeno" href="/portal/quotes/{{ quote.id }}/document">{{ icon("exportar", 16) }}{{ t("quotes.download_pdf") }}</a>
+        </div>
+    </header>
+
+    {# EN: 1. The decision (or its result) | PT: 1. A decisão (ou o resultado dela) #}
+    {% if can_decide %}
+        <section aria-labelledby="decidir" class="chapa decisao">
+            <div class="decisao-valor">
+                <span class="dica">{{ t("landing.total_final") }}</span>
+                <b>{{ quote.final_total_cents | brl }}</b>
+                <span class="decisao-prazo">
+                    {% if days <= 0 %}{{ t("portal.due_today") }}{% elif days == 1 %}{{ t("portal.due_tomorrow") }}{% else %}{{ t("portal.due_in").replace("{n}", days | string) }}{% endif %}
+                    · {{ quote.valid_until[8:10] }}/{{ quote.valid_until[5:7] }}
+                </span>
+            </div>
+            <h2 class="titulo-secao" id="decidir">{{ t("portal.decide_title") }}</h2>
+            <p class="dica">{{ t("portal.decide_help") }}</p>
+            <form action="/portal/quotes/{{ quote.id }}/accept" data-confirm="{{ t('portal.confirm_accept').replace('{total}', quote.final_total_cents | brl) }}" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                <button class="botao botao-faixa botao-grande botao-largo" type="submit">{{ icon("certo", 20) }}{{ t("portal.accept") }}</button>
+            </form>
+            <details class="dobra">
+                <summary class="botao botao-contorno botao-largo">{{ t("portal.decline") }}</summary>
+                <form action="/portal/quotes/{{ quote.id }}/decline" class="formulario" data-confirm="{{ t('portal.confirm_decline') }}" method="post">
+                    <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                    {% if quote.feat_portal_full %}
+                        <div class="campo">
+                            <label for="reason">{{ t("portal.decline_reason") }} <small class="dica-inline">({{ t("products.optional") }})</small></label>
+                            <textarea id="reason" maxlength="300" name="reason" placeholder="{{ t('portal.decline_placeholder') }}" rows="2"></textarea>
+                        </div>
+                    {% endif %}
+                    <button class="botao botao-contorno" type="submit">{{ t("portal.confirm_decline_button") }}</button>
+                </form>
+            </details>
+        </section>
+    {% elif quote.status == "accepted" %}
+        <div class="aviso aviso-sucesso">{{ icon("certo", 18) }}<p>{{ t("portal.accepted_on") }} {{ quote.customer_decided_at | local_time }}. {{ t("portal.accepted_next") }}</p></div>
+    {% elif quote.status == "declined" %}
+        <div class="aviso aviso-info">{{ icon("info", 18) }}<p>{{ t("portal.declined_on") }} {{ quote.customer_decided_at | local_time }}{% if quote.decline_reason %} · “{{ quote.decline_reason }}”{% endif %}</p></div>
+    {% else %}
+        <div class="aviso aviso-atencao">{{ icon("alerta", 18) }}<p>{{ t("portal.expired_msg") }}</p></div>
+    {% endif %}
+
+    <div class="grade-equipe portal-grade">
+        {# EN: 2. What is being bought | PT: 2. O que está sendo comprado #}
+        <article aria-labelledby="itens-titulo" class="chapa romaneio">
+            <h2 class="titulo-secao" id="itens-titulo">{{ t("portal.items_title").replace("{n}", items | length | string) }}</h2>
+            <ul class="romaneio-itens">
+                {% for item in items %}
+                    <li>
+                        <span class="romaneio-produto">
+                            <strong>{{ item.product_name }}</strong>
+                            <small>{{ item.quantity }} × {{ item.list_price_cents | brl }} / {{ item.unit }}{% if item.discount_bps %} · −{{ item.discount_bps | pct }}{% endif %}</small>
+                        </span>
+                        <b>{{ item.line_total_cents | brl }}</b>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <dl class="totais romaneio-totais">
+                <div><dt>{{ t("quotes.list_total") }}</dt><dd>{{ quote.list_total_cents | brl }}</dd></div>
+                {% if quote.header_discount_bps %}<div><dt>{{ t("quotes.header_discount") }}</dt><dd>−{{ quote.header_discount_bps | pct }}</dd></div>{% endif %}
+                {% if quote.list_total_cents > quote.final_total_cents %}<div><dt>{{ t("portal.you_save") }}</dt><dd>{{ (quote.list_total_cents - quote.final_total_cents) | brl }}</dd></div>{% endif %}
+                <div class="total-final-app"><dt>{{ t("landing.total_final") }}</dt><dd>{{ quote.final_total_cents | brl }}</dd></div>
+            </dl>
+
+            {% if quote.notes_customer %}
+                <p class="romaneio-nota"><strong>{{ t("portal.notes") }}:</strong> {{ quote.notes_customer }}</p>
+            {% endif %}
+            <p class="dica">{{ t("quotes.valid_until") }} {{ quote.valid_until[8:10] }}/{{ quote.valid_until[5:7] }}/{{ quote.valid_until[0:4] }}</p>
+        </article>
+
+        {# EN: 3. Who to talk to | PT: 3. Com quem falar #}
+        <aside aria-labelledby="contato-titulo" class="chapa portal-contato">
+            <h2 class="titulo-secao" id="contato-titulo">{{ t("portal.questions") }}</h2>
+            <p class="dica">{{ t("portal.questions_text") }}</p>
+            {% if seller %}<p><span class="dica">{{ t("portal.your_seller") }}</span><br><strong>{{ seller }}</strong> · {{ quote.workspace_name }}</p>{% endif %}
+            {% if whatsapp %}
+                <a class="botao botao-contorno botao-largo" href="{{ whatsapp }}" rel="noopener" target="_blank">{{ icon("mensagem", 18) }}{{ t("portal.talk_distributor") }}</a>
+            {% endif %}
+        </aside>
+    </div>
+
+{% endblock %}

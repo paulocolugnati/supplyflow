@@ -1,0 +1,82 @@
+{#
+    EN: Create / edit a customer. `customer` is None when creating. The responsible-seller
+        select only shows for admins and owners (members always own what they create);
+        the server applies the same rule.
+    PT: Criar / editar um cliente. `customer` é None ao criar. O select de vendedor
+        responsável só aparece para admins e owners (o member sempre é dono do que cria);
+        o servidor aplica a mesma regra.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("customers.edit_title") if customer else t("customers.new") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ customer.name if customer else t("customers.new") }}</h1>
+            <p class="subtitulo"><a href="{{ '/customers/' ~ customer.id if customer else '/customers' }}">{{ t("customers.back") }}</a></p>
+        </div>
+    </header>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <form action="{{ '/customers/' ~ customer.id ~ '/edit' if customer else '/customers/new' }}" class="chapa formulario formulario-largo" method="post" novalidate>
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        <div class="campo campo-inteiro">
+            <label for="name">{{ t("customers.name") }}</label>
+            <input autofocus id="name" maxlength="120" name="name" required type="text" value="{{ form.name or '' }}">
+        </div>
+
+        <div class="campo">
+            <label for="cnpj">{{ t("customers.cnpj") }}</label>
+            <input id="cnpj" inputmode="numeric" maxlength="18" name="cnpj" placeholder="00.000.000/0000-00" type="text" value="{{ form.cnpj | cnpj if form.cnpj and form.cnpj | length == 14 else (form.cnpj or '') }}">
+            <small class="dica">{{ t("customers.cnpj_hint") }}</small>
+        </div>
+
+        <div class="campo">
+            <label for="segment">{{ t("customers.segment") }}</label>
+            {# EN: Free text, with the segments already used as suggestions
+               PT: Texto livre, com os segmentos já usados como sugestões #}
+            <input id="segment" list="segmentos" maxlength="60" name="segment" placeholder="{{ t('customers.segment_placeholder') }}" type="text" value="{{ form.segment or '' }}">
+            <datalist id="segmentos">
+                {% for segment in segments %}<option value="{{ segment }}">{% endfor %}
+            </datalist>
+        </div>
+
+        <div class="campo">
+            <label for="phone">{{ t("customers.phone") }}</label>
+            <input id="phone" inputmode="tel" maxlength="25" name="phone" placeholder="(11) 98765-4321" type="tel" value="{{ form.phone | phone if form.phone and form.phone.startswith('55') else (form.phone or '') }}">
+        </div>
+
+        <div class="campo">
+            <label for="city">{{ t("customers.city") }}</label>
+            <input id="city" maxlength="80" name="city" type="text" value="{{ form.city or '' }}">
+        </div>
+
+        {% if membership.role in ("owner", "admin") %}
+            <div class="campo">
+                <label for="owner_id">{{ t("customers.owner") }}</label>
+                <select id="owner_id" name="owner_id">
+                    <option value="">{{ t("customers.no_owner") }}</option>
+                    {% for person in staff %}
+                        <option {% if form.owner_id == person.id | string %}selected{% endif %} value="{{ person.id }}">{{ person.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <div class="acoes-linha campo-inteiro">
+            <button class="botao botao-faixa" type="submit">{{ t("customers.save") }}</button>
+            <a class="botao botao-contorno" href="{{ '/customers/' ~ customer.id if customer else '/customers' }}">{{ t("customers.cancel") }}</a>
+        </div>
+    </form>
+
+{% endblock %}

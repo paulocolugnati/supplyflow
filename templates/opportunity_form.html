@@ -1,0 +1,113 @@
+{#
+    EN: Create / edit an opportunity. The contact list follows the chosen customer (app.js
+        hides other customers' contacts); the server checks the same rule. The starting stage
+        is chosen only on creation, grouped by pipeline.
+    PT: Criar / editar uma oportunidade. A lista de contatos acompanha o cliente escolhido (o
+        app.js esconde os contatos de outros clientes); o servidor confere a mesma regra. A
+        etapa inicial só é escolhida na criação, agrupada por funil.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ opportunity.title if opportunity else t("pipeline.new") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ opportunity.title if opportunity else t("pipeline.new") }}</h1>
+            <p class="subtitulo"><a href="{{ '/opportunities/' ~ opportunity.id if opportunity else '/pipeline' }}">{{ t("customers.back") }}</a></p>
+        </div>
+    </header>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% if not companies %}
+        <section class="vazio chapa">
+            <h2 class="titulo-secao">{{ t("pipeline.need_customer") }}</h2>
+            <a class="botao botao-faixa" href="/customers/new">{{ icon("adicionar", 18) }}{{ t("customers.new") }}</a>
+        </section>
+    {% else %}
+
+    <form action="{{ '/opportunities/' ~ opportunity.id ~ '/edit' if opportunity else '/opportunities/new' }}" class="chapa formulario formulario-largo" data-oportunidade method="post" novalidate>
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+        <div class="campo campo-inteiro">
+            <label for="title">{{ t("pipeline.opp_title") }}</label>
+            <input autofocus id="title" maxlength="120" name="title" placeholder="{{ t('pipeline.title_placeholder') }}" required type="text" value="{{ form.title or '' }}">
+        </div>
+
+        <div class="campo">
+            <label for="company_id">{{ t("customers.col_customer") }}</label>
+            <select data-cliente id="company_id" name="company_id" required>
+                <option value="">{{ t("pipeline.choose_customer") }}</option>
+                {% for c in companies %}
+                    <option {% if form.company_id == c.id | string %}selected{% endif %} value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="contact_id">{{ t("pipeline.contact") }} <small class="dica-inline">({{ t("products.optional") }})</small></label>
+            <select data-contato id="contact_id" name="contact_id">
+                <option value="">{{ t("pipeline.no_contact") }}</option>
+                {% for k in contacts %}
+                    <option data-empresa="{{ k.company_id }}" {% if form.contact_id == k.id | string %}selected{% endif %} value="{{ k.id }}">{{ k.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if not opportunity %}
+            <div class="campo">
+                <label for="stage_id">{{ t("pipeline.start_stage") }}</label>
+                <select id="stage_id" name="stage_id">
+                    {% for p in pipelines %}
+                        <optgroup label="{{ p.name }}">
+                            {% for s in stages if s.pipeline_id == p.id %}
+                                <option {% if form.stage_id == s.id | string %}selected{% endif %} value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <div class="campo">
+            <label for="value">{{ t("pipeline.value") }} <small class="dica-inline">({{ t("pipeline.estimated") }})</small></label>
+            <div class="entrada-prefixo">
+                <span aria-hidden="true">R$</span>
+                <input id="value" inputmode="decimal" maxlength="14" name="value" placeholder="0,00" type="text" value="{{ form.value or '' }}">
+            </div>
+        </div>
+
+        <div class="campo">
+            <label for="expected_close">{{ t("pipeline.expected_close") }}</label>
+            <input id="expected_close" name="expected_close" type="date" value="{{ form.expected_close or '' }}">
+        </div>
+
+        {% if membership.role in ("owner", "admin") %}
+            <div class="campo">
+                <label for="owner_id">{{ t("customers.owner") }}</label>
+                <select id="owner_id" name="owner_id">
+                    <option value="">{{ t("customers.no_owner") }}</option>
+                    {% for person in staff %}
+                        <option {% if form.owner_id == person.id | string %}selected{% endif %} value="{{ person.id }}">{{ person.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <div class="acoes-linha campo-inteiro">
+            <button class="botao botao-faixa" type="submit">{{ t("customers.save") }}</button>
+            <a class="botao botao-contorno" href="{{ '/opportunities/' ~ opportunity.id if opportunity else '/pipeline' }}">{{ t("customers.cancel") }}</a>
+        </div>
+    </form>
+
+    {% endif %}
+
+{% endblock %}

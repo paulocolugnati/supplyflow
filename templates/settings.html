@@ -1,0 +1,106 @@
+{#
+    EN: Settings (owner only, settings.py). Company data: e-mail, WhatsApp, city and logo can
+        change here; name and CNPJ are locked and change through support (a CNPJ never filled
+        can be set once). Links to the discount ceilings and to the plan.
+    PT: Configurações (só o dono, settings.py). Dados da empresa: e-mail, WhatsApp, cidade e
+        logo mudam aqui; nome e CNPJ ficam travados e mudam pelo suporte (um CNPJ nunca
+        preenchido pode ser definido uma vez). Links para os tetos de desconto e para o plano.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("settings.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("settings.title") }}</h1>
+            <p class="subtitulo">{{ t("settings.subtitle") }}</p>
+        </div>
+    </header>
+
+    {% if errors %}
+        <div class="aviso aviso-erro" role="alert">
+            {{ icon("alerta", 18) }}
+            <ul>{% for error in errors %}<li>{{ t(error) }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <div class="grade-equipe">
+        <section aria-labelledby="empresa-titulo" class="chapa">
+            <h2 class="titulo-secao" id="empresa-titulo">{{ t("settings.company_title") }}</h2>
+            <form action="/settings" class="formulario" enctype="multipart/form-data" method="post">
+                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+
+                {# EN: Locked identity: shown, not editable | PT: Identidade travada: mostrada, não editável #}
+                <dl class="ficha">
+                    <div><dt>{{ t("settings.name") }}</dt><dd>{{ ws.name }} <span class="tag-plano">{{ t("settings.locked") }}</span></dd></div>
+                    {% if not cnpj_missing %}
+                        <div><dt>{{ t("customers.cnpj") }}</dt><dd>{{ ws.cnpj | cnpj }} <span class="tag-plano">{{ t("settings.locked") }}</span></dd></div>
+                    {% endif %}
+                </dl>
+                <p class="dica">
+                    {{ t("settings.locked_text") }}
+                    {% if support %}<a href="{{ support }}" rel="noopener" target="_blank">{{ t("plans.talk_support") }}</a>{% endif %}
+                </p>
+
+                {% if cnpj_missing %}
+                    <div class="campo">
+                        <label for="cnpj">{{ t("customers.cnpj") }}</label>
+                        <small class="dica" id="cnpj-dica">{{ t("settings.cnpj_once") }}</small>
+                        <input aria-describedby="cnpj-dica" id="cnpj" inputmode="numeric" maxlength="18" name="cnpj" placeholder="00.000.000/0000-00" required type="text" value="{{ form.cnpj or '' }}">
+                    </div>
+                {% endif %}
+
+                <div class="campos-dupla">
+                    <div class="campo">
+                        <label for="email">{{ t("settings.email") }}</label>
+                        <input autocomplete="email" id="email" maxlength="254" name="email" required type="email" value="{{ form.email or '' }}">
+                    </div>
+                    <div class="campo">
+                        <label for="phone">{{ t("settings.phone") }}</label>
+                        <input autocomplete="tel" id="phone" inputmode="tel" maxlength="20" name="phone" placeholder="(11) 98765-4321" required type="text" value="{{ form.phone | phone if form.phone and form.phone.isdigit() else form.phone }}">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="city">{{ t("customers.city") }}</label>
+                    <input id="city" maxlength="80" name="city" required type="text" value="{{ form.city or '' }}">
+                </div>
+
+                <div class="campo">
+                    <span class="rotulo-campo" id="logo-rotulo">{{ t("settings.logo") }}</span>
+                    {% if ws.logo_path %}
+                        <div class="logo-atual">
+                            <img alt="{{ t('settings.logo_current') }}" src="{{ ws.logo_path }}">
+                            <label class="opcao-inline"><input name="remove_logo" type="checkbox" value="1"> {{ t("settings.logo_remove") }}</label>
+                        </div>
+                    {% endif %}
+                    <label class="sr-only" for="logo">{{ t("settings.logo") }}</label>
+                    <small class="dica" id="logo-dica">{{ t("settings.logo_hint") }}</small>
+                    <input accept="image/png,image/jpeg,image/webp" aria-describedby="logo-dica" id="logo" name="logo" type="file">
+                </div>
+
+                <button class="botao botao-faixa" type="submit">{{ t("settings.save") }}</button>
+            </form>
+        </section>
+
+        <div class="coluna-lateral">
+            <section aria-labelledby="tetos-config" class="chapa">
+                <h2 class="titulo-secao" id="tetos-config">{{ t("dashboard.ceilings_title") }}</h2>
+                <dl class="ficha ficha-compacta">
+                    <div><dt>{{ t("landing.stop_seller") }}</dt><dd>{{ ws.member_discount_limit_bps | pct }}</dd></div>
+                    <div><dt>{{ t("landing.stop_manager") }}</dt><dd>{{ ws.admin_discount_limit_bps | pct }}</dd></div>
+                    <div><dt>{{ t("onboarding.min_margin") }}</dt><dd>{{ ws.min_margin_bps | pct }}</dd></div>
+                </dl>
+                <a class="botao botao-contorno botao-pequeno" href="/onboarding/limits">{{ icon("regua", 16) }}{{ t("dashboard.adjust") }}</a>
+            </section>
+            <section aria-labelledby="plano-config" class="chapa">
+                <h2 class="titulo-secao" id="plano-config">{{ t("plans.title") }}</h2>
+                <p class="dica">{{ t("plans.current") }} <b>{{ membership.plan_name }}</b></p>
+                <a class="botao botao-contorno botao-pequeno" href="/plans">{{ t("plans.see_plans") }}</a>
+            </section>
+        </div>
+    </div>
+
+{% endblock %}

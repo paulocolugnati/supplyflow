@@ -1,0 +1,109 @@
+{#
+    EN: Plans page (plans.py): current plan + negotiated price, quota meters, the four plans
+        (the current one marked) and the support button. Changing plans goes through support
+        on WhatsApp; only the owner gets "ask for this plan". A downgrade warning lists what
+        would be over the limit (nothing is deleted).
+    PT: Página de planos (plans.py): plano atual + preço negociado, medidores das cotas, os
+        quatro planos (o atual marcado) e o botão de suporte. Trocar de plano passa pelo
+        suporte no WhatsApp; só o dono recebe "pedir este plano". Um aviso de downgrade lista
+        o que passaria do limite (nada é apagado).
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("plans.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("plans.title") }}</h1>
+            <p class="subtitulo">
+                {{ t("plans.current") }} <b>{{ ws.plan_name }}</b>
+                · {{ (workspace.custom_price_cents if workspace.custom_price_cents is not none else ws.price_cents) | brl }}{{ t("landing.per_month") }}
+                {% if workspace.custom_price_cents is not none %}<span class="tag-plano">{{ t("plans.negotiated") }}</span>{% endif %}
+                · {{ t("plans.since") }} {{ workspace.plan_started_at | local_time }}
+            </p>
+        </div>
+        {% if support %}
+            <a class="botao botao-faixa" href="{{ support }}" rel="noopener" target="_blank">{{ icon("mensagem", 18) }}{{ t("plans.talk_support") }}</a>
+        {% endif %}
+    </header>
+
+    <section aria-labelledby="uso-titulo" class="chapa">
+        <h2 class="titulo-secao" id="uso-titulo">{{ t("usage.title") }}</h2>
+        <div class="medidores">
+            {% for item in usage %}
+                {% set state = "ilimitado" if item.limit is none else ("cheio" if item.percent >= 100 else ("quase" if item.percent >= 80 else "")) %}
+                <div class="medidor medidor-{{ state or 'normal' }}" style="--uso: {{ (item.percent or 0) / 100 }}">
+                    <div class="medidor-topo">
+                        <span class="medidor-rotulo">{{ t("usage." ~ item.resource) }}</span>
+                        <span class="medidor-valor">
+                            <span class="contador" data-contador-rolar>{{ item.used | num }}</span>
+                            <span class="medidor-limite">/ {{ item.limit | num if item.limit is not none else t("usage.unlimited") }}</span>
+                        </span>
+                    </div>
+                    <div aria-hidden="true" class="medidor-faixa"><span></span></div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {# EN: The four plans. Included = solid line, not included = struck line (same as the landing)
+       PT: Os quatro planos. Incluído = linha contínua, não incluído = linha riscada (igual à landing) #}
+    <section aria-labelledby="planos-titulo" class="chapa">
+        <div class="chapa-topo">
+            <div>
+                <h2 class="titulo-secao" id="planos-titulo">{{ t("plans.compare") }}</h2>
+                <p class="dica">{{ t("plans.how_to_change") if ws.role == "owner" else t("plans.owner_only") }}</p>
+            </div>
+        </div>
+        <div class="planos-grade">
+            {% for plan in plans %}
+                <article class="plano{% if plan.current %} plano-atual{% endif %}" {% if plan.current %}aria-current="true"{% endif %}>
+                    <div class="plano-topo">
+                        <h3>{{ plan.name }}</h3>
+                        {% if plan.current %}<span class="tag-atual">{{ t("plans.your_plan") }}</span>{% endif %}
+                    </div>
+                    <p class="plano-preco">{{ plan.price_cents | brl }}<small>{{ t("landing.per_month") }}</small></p>
+                    <ul class="plano-limites">
+                        {% for label, value in [
+                            ("usage.users", plan.max_users), ("usage.customers", plan.max_customers),
+                            ("usage.products", plan.max_products), ("usage.quotes_month", plan.max_quotes_month)
+                        ] %}
+                            <li><span>{{ t(label) }}</span><b>{{ value | num if value is not none else t("usage.unlimited") }}</b></li>
+                        {% endfor %}
+                    </ul>
+                    <ul class="plano-recursos">
+                        {% for feature in ["discount_approval", "min_margin", "repurchase_alert", "csv_export", "multi_pipeline", "portal_full"] %}
+                            <li class="{{ 'tem' if plan['feat_' ~ feature] else 'nao-tem' }}">
+                                <span aria-hidden="true" class="recurso-linha"></span>
+                                <span>{{ t("plans.feat_" ~ feature) }}</span>
+                                <span class="sr-only">{{ t("landing.included") if plan['feat_' ~ feature] else t("landing.not_included") }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="plano-suporte">{{ t("landing.support_" ~ plan.support_level) }}</p>
+                    {% if plan.over %}
+                        <div class="plano-aviso">
+                            <strong>{{ t("plans.over_title") }}</strong>
+                            <ul>
+                                {% for item in plan.over %}
+                                    <li>{{ t("plans.quota_" ~ item.resource) }}: {{ item.used | num }} / {{ item.limit | num }}</li>
+                                {% endfor %}
+                            </ul>
+                            <small>{{ t("plans.over_text") }}</small>
+                        </div>
+                    {% endif %}
+                    {% if plan.ask %}
+                        <a class="botao botao-contorno" href="{{ plan.ask }}" rel="noopener" target="_blank">{{ t("plans.ask") }}</a>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+        {% if not support %}
+            <p class="nota-rodape">{{ t("plans.no_support") }}</p>
+        {% endif %}
+    </section>
+
+{% endblock %}

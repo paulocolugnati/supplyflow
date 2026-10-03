@@ -1,0 +1,34 @@
+{#
+    EN: "Forgot my password" (password_reset.py). After sending, the page always shows the same
+        confirmation, whether the e-mail has an account or not.
+    PT: "Esqueci minha senha" (password_reset.py). Depois de enviar, a página sempre mostra a
+        mesma confirmação, tendo conta ou não.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("reset.forgot_title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    <h1 class="titulo-pagina">{{ t("reset.forgot_title") }}</h1>
+
+    {% if sent %}
+        <div class="aviso aviso-info" role="status">{{ icon("info", 18) }}<p>{{ t("reset.sent").replace("{email}", email) }}</p></div>
+        <p class="dica">{{ t("reset.sent_hint") }}</p>
+        <p class="acesso-rodape"><a href="/login">{{ t("reset.back_to_login") }}</a></p>
+    {% else %}
+        <p class="subtitulo">{{ t("reset.forgot_subtitle") }}</p>
+        {% if error %}
+            <div class="aviso aviso-erro" role="alert">{{ icon("alerta", 18) }}<p>{{ t(error) }}</p></div>
+        {% endif %}
+        <form action="/forgot" class="formulario" method="post">
+            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+            <div class="campo">
+                <label for="email">{{ t("login.email") }}</label>
+                <input autocomplete="email" autofocus id="email" maxlength="254" name="email" required type="email" value="{{ email }}">
+            </div>
+            <button class="botao botao-faixa botao-largo" type="submit">{{ t("reset.send_link") }}</button>
+        </form>
+        <p class="acesso-rodape"><a href="/login">{{ t("reset.back_to_login") }}</a></p>
+    {% endif %}
+{% endblock %}

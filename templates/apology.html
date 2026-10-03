@@ -1,0 +1,20 @@
+{#
+    EN: Error page used by apology() in helpers.py. Works logged in (app shell) or out.
+        The code is painted large like a floor marking.
+    PT: Página de erro usada pela função apology() do helpers.py. Funciona logado (casca do
+        sistema) ou não. O código é pintado grande, como uma marcação de piso.
+#}
+{% extends "layout.html" %}
+
+{% block title %}{{ code }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <section class="erro-pagina">
+        <p aria-hidden="true" class="erro-codigo">{{ code }}</p>
+        <h1 class="titulo-pagina">{{ t("error.title") }}</h1>
+        <p class="subtitulo">{{ message }}</p>
+        <a class="botao botao-faixa" href="/">{{ t("error.back") }}</a>
+    </section>
+
+{% endblock %}

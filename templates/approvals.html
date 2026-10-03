@@ -1,0 +1,77 @@
+{#
+    EN: Approval queue for admins and owners: only requests this person may decide (never
+        their own; admins only up to their ceiling). Approving fixes the exact discount;
+        rejecting needs a note and sends the quote back to draft.
+    PT: Fila de aprovação para admins e owners: só pedidos que esta pessoa pode decidir (nunca
+        os dela; admins só até o teto deles). Aprovar fixa o desconto exato; recusar exige
+        um motivo e devolve o orçamento para rascunho.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("approvals.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("approvals.title") }}</h1>
+            <p class="subtitulo">{{ requests | length }} {{ t("approvals.waiting_suffix") }}</p>
+        </div>
+    </header>
+
+    {% if requests %}
+        <div class="lista-aprovacoes">
+            {% for r in requests %}
+                <article aria-labelledby="pedido-{{ r.id }}" class="chapa pedido-aprovacao">
+                    <div class="pedido-topo">
+                        <div>
+                            <h2 class="titulo-secao" id="pedido-{{ r.id }}"><a class="link-linha" href="/quotes/{{ r.quote_id }}">#{{ "%04d" | format(r.number) }} · {{ r.company_name }}</a></h2>
+                            <p class="dica">{{ t("quotes.asked_by") }} {{ r.requester_name }} · {{ r.created_at | local_time }}</p>
+                        </div>
+                        <span class="pedido-desconto">{{ r.requested_discount_bps | pct }}</span>
+                    </div>
+                    <dl class="ficha ficha-compacta">
+                        <div><dt>{{ t("quotes.list_total") }}</dt><dd>{{ r.list_total_cents | brl }}</dd></div>
+                        <div><dt>{{ t("landing.total_final") }}</dt><dd><b>{{ r.final_total_cents | brl }}</b></dd></div>
+                        <div><dt>{{ t("products.margin") }}</dt><dd>{{ r.margin_bps | pct if r.margin_bps is not none else "—" }}</dd></div>
+                        <div><dt>{{ t("approvals.discount_brl") }}</dt><dd>{{ r.discount_cents | brl }}</dd></div>
+                        <div><dt>{{ t("approvals.reason") }}</dt><dd>“{{ r.reason }}”</dd></div>
+                        <div><dt>{{ t("approvals.customer_history") }}</dt><dd>{% if r.history.orders %}{{ r.history.orders }} {{ t("approvals.orders") }} · {{ r.history.total | brl }} · {{ t("approvals.last") }} {{ r.history.last | local_time }}{% else %}{{ t("approvals.first_order") }}{% endif %}</dd></div>
+                    </dl>
+                    {# EN: The items, so nobody has to open the quote to decide | PT: Os itens, para ninguém precisar abrir o orçamento para decidir #}
+                    <details class="pedido-itens" open>
+                        <summary>{{ r["items"] | length }} {{ t("approvals.items") }}</summary>
+                        <ul>
+                            {% for item in r["items"] %}
+                                <li><span>{{ item.quantity }} {{ item.unit }} · {{ item.product_name }}{% if item.cost_cents is none %} <small class="tag-plano">{{ t("approvals.no_cost") }}</small>{% endif %}</span><b>{{ item.line_total_cents | brl }}</b></li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                    <a class="botao botao-contorno botao-pequeno" href="/quotes/{{ r.quote_id }}">{{ t("approvals.open_quote") }}</a>
+                    <div class="pedido-acoes">
+                        <form action="/approvals/{{ r.id }}/approve" class="pedido-form" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <label for="nota-aprovar-{{ r.id }}">{{ t("approvals.note_optional") }}</label>
+                            <input id="nota-aprovar-{{ r.id }}" maxlength="300" name="note" placeholder="{{ t('approvals.note_optional') }}" type="text">
+                            <button class="botao botao-faixa" type="submit">{{ icon("certo", 18) }}{{ t("approvals.approve").replace("{pct}", r.requested_discount_bps | pct) }}</button>
+                        </form>
+                        <form action="/approvals/{{ r.id }}/reject" class="pedido-form" method="post">
+                            <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                            <label for="nota-recusar-{{ r.id }}">{{ t("approvals.note_required") }}</label>
+                            <input id="nota-recusar-{{ r.id }}" maxlength="300" minlength="3" name="note" placeholder="{{ t('approvals.note_required') }}" required type="text">
+                            <button class="botao botao-contorno" type="submit">{{ t("approvals.reject") }}</button>
+                        </form>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <section class="vazio chapa">
+            <span aria-hidden="true" class="vazio-faixa"></span>
+            <h2 class="titulo-secao">{{ t("approvals.empty_title") }}</h2>
+            <p>{{ t("approvals.empty_text") }}</p>
+        </section>
+    {% endif %}
+
+{% endblock %}

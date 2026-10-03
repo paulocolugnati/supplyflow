@@ -1,0 +1,37 @@
+{#
+    EN: Login. "next" keeps the page the user tried to open before logging in.
+    PT: Login. O "next" guarda a página que o usuário tentou abrir antes de entrar.
+#}
+{% extends "auth.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}{{ t("login.title") }} · SupplyFlow{% endblock %}
+
+{% block form %}
+    <h1 class="titulo-pagina">{{ t("login.title") }}</h1>
+    <p class="subtitulo">{{ t("login.subtitle") }}</p>
+
+    {% if error %}
+        <div class="aviso aviso-erro" role="alert">{{ icon("alerta", 18) }}<p>{{ t(error) }}</p></div>
+    {% endif %}
+
+    <form action="/login" class="formulario" method="post">
+        <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+        <input name="next" type="hidden" value="{{ next_url }}">
+
+        <div class="campo">
+            <label for="email">{{ t("login.email") }}</label>
+            <input autocomplete="email" autofocus id="email" name="email" required type="email" value="{{ email }}">
+        </div>
+
+        <div class="campo">
+            <label for="password">{{ t("login.password") }}</label>
+            <input autocomplete="current-password" id="password" name="password" required type="password">
+            <a class="link-discreto" href="/forgot">{{ t("reset.forgot_link") }}</a>
+        </div>
+
+        <button class="botao botao-faixa botao-largo" type="submit">{{ t("login.submit") }}</button>
+    </form>
+
+    <p class="acesso-rodape">{{ t("login.no_account") }} <a href="/register">{{ t("nav.register") }}</a></p>
+{% endblock %}

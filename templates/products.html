@@ -1,0 +1,126 @@
+{#
+    EN: Product catalog. Everyone on the staff reads it; only admins and owners see the edit
+        actions (the server checks again). Inactive products are struck through: they stay in
+        old quotes but can't enter new ones.
+    PT: Catálogo de produtos. Toda a equipe lê; só admins e owners veem as ações de edição
+        (o servidor confere de novo). Produtos inativos aparecem riscados: continuam nos
+        orçamentos antigos, mas não entram em orçamentos novos.
+#}
+{% extends "layout.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/crm_blocks.html" import export_button with context %}
+
+{% block title %}{{ t("products.title") }} · SupplyFlow{% endblock %}
+
+{% block main %}
+
+    <header class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">{{ t("products.title") }}</h1>
+            <p class="subtitulo">{{ counts.active }} {{ t("products.active_count") }} · {{ counts.total - counts.active }} {{ t("products.inactive_count") }}</p>
+        </div>
+        <div class="acoes-linha">
+            {{ export_button("products") }}
+            {% if can_edit %}
+                {% if can_add %}
+                    <a class="botao botao-faixa" href="/products/new">{{ icon("adicionar", 18) }}{{ t("products.new") }}</a>
+                {% else %}
+                    <span class="tag-plano">{{ t("products.quota_short") }}</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </header>
+
+    <form action="/products" class="filtros" method="get" role="search">
+        <div class="campo campo-busca">
+            <label class="sr-only" for="q">{{ t("products.search") }}</label>
+            {{ icon("busca", 18) }}
+            <input id="q" maxlength="100" name="q" placeholder="{{ t('products.search_placeholder') }}" type="search" value="{{ filters.q }}">
+        </div>
+        <div class="campo">
+            <label class="sr-only" for="status">{{ t("products.status") }}</label>
+            <select id="status" name="status">
+                {% for value, key in [("active", "products.only_active"), ("inactive", "products.only_inactive"), ("all", "products.all")] %}
+                    <option {% if filters.status == value %}selected{% endif %} value="{{ value }}">{{ t(key) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="botao botao-contorno" type="submit">{{ t("customers.filter") }}</button>
+    </form>
+
+    {% if products %}
+        <section class="chapa chapa-tabela">
+            <table class="tabela tabela-produtos">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ t("products.col_product") }}</th>
+                        <th scope="col">{{ t("products.unit") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("products.price") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("products.cost") }}</th>
+                        <th class="coluna-numero" scope="col">{{ t("products.margin") }}</th>
+                        {% if can_edit %}<th class="coluna-acao" scope="col"><span class="sr-only">{{ t("team.actions") }}</span></th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                        <tr class="{{ '' if p.active else 'produto-inativo' }}">
+                            <td>
+                                <span class="sku">{{ p.sku }}</span>
+                                <strong class="produto-nome">{{ p.name }}</strong>
+                                {% if not p.active %}<span class="tag-plano">{{ t("products.inactive") }}</span>{% endif %}
+                            </td>
+                            <td>{{ t("unit." ~ p.unit) }}</td>
+                            <td class="coluna-numero" data-rotulo="{{ t('products.price') }}"><b>{{ p.price_cents | brl }}</b></td>
+                            <td class="coluna-numero" data-rotulo="{{ t('products.cost') }}">{{ p.cost_cents | brl if p.cost_cents is not none else "—" }}</td>
+                            <td class="coluna-numero" data-rotulo="{{ t('products.margin') }}">
+                                {# EN: Margin as a tiny ruler: the bar length is the margin; negative = struck
+                                   PT: Margem como uma réguinha: o tamanho da barra é a margem; negativa = riscada #}
+                                {% if p.margin_bps is not none %}
+                                    <span class="margem {{ 'margem-negativa' if p.margin_bps < 0 else '' }}">
+                                        <span aria-hidden="true" class="margem-barra" style="--m: {{ [[p.margin_bps, 0] | max, 5000] | min / 5000 }}"></span>
+                                        {{ p.margin_bps | pct }}
+                                    </span>
+                                {% else %}
+                                    <span class="celula-sub">—</span>
+                                {% endif %}
+                            </td>
+                            {% if can_edit %}
+                                <td class="coluna-acao">
+                                    <details class="menu">
+                                        <summary aria-label="{{ t('team.manage') }} {{ p.name }}" class="botao-icone">{{ icon("mais", 20) }}</summary>
+                                        <div class="menu-painel">
+                                            <a class="menu-item" href="/products/{{ p.id }}/edit">{{ t("customers.edit") }}</a>
+                                            <form action="/products/{{ p.id }}/toggle" method="post">
+                                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                <input name="next" type="hidden" value="{{ request.full_path }}">
+                                                <button class="menu-item" type="submit">{{ t("products.deactivate") if p.active else t("products.activate") }}</button>
+                                            </form>
+                                            <hr>
+                                            <form action="/products/{{ p.id }}/delete" data-confirm="{{ t('products.confirm_delete') }}" method="post">
+                                                <input name="_csrf" type="hidden" value="{{ csrf_token() }}">
+                                                <button class="menu-item menu-perigo" type="submit">{{ t("customers.delete") }}</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    {% elif counts.total == 0 %}
+        <section class="vazio chapa">
+            <span aria-hidden="true" class="vazio-faixa"></span>
+            <h2 class="titulo-secao">{{ t("products.empty_title") }}</h2>
+            <p>{{ t("products.empty_text") }}</p>
+            {% if can_edit and can_add %}<a class="botao botao-faixa" href="/products/new">{{ icon("adicionar", 18) }}{{ t("products.new") }}</a>{% endif %}
+        </section>
+    {% else %}
+        <section class="vazio chapa">
+            <h2 class="titulo-secao">{{ t("products.no_results") }}</h2>
+            <a class="botao botao-contorno" href="/products?status=all">{{ t("products.all") }}</a>
+        </section>
+    {% endif %}
+
+{% endblock %}

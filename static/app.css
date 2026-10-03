@@ -1,0 +1,4191 @@
+/*
+ * EN: Logged-in app and access screens, in the "Piso do Galpão" world (see DESIGN.md).
+ *     Operate mode: scanability first; the brand lives in precise details (the lane pointer,
+ *     rack tags, state as line form, the discount ruler, the mechanical counter).
+ *     Tokens, type, buttons, ruler and counter come from sf-base.css.
+ * PT: Sistema logado e telas de acesso, no mundo "Piso do Galpão" (veja DESIGN.md).
+ *     Modo de uso: leitura rápida primeiro; a marca vive nos detalhes precisos (o ponteiro da
+ *     faixa, etiquetas de prateleira, estado como forma de linha, a régua, o contador mecânico).
+ *     Tokens, tipografia, botões, régua e contador vêm do sf-base.css.
+ */
+
+/* ---------- EN: Extra tokens for app states | PT: Tokens extras para estados do sistema ---------- */
+
+:root,
+[data-theme="dark"] {
+    --erro: #F4A39B;          /* EN: 7.6:1 on --piso | PT: 7,6:1 sobre --piso */
+    --atencao: #F2D27A;
+    --campo: #082129;         /* EN: input well, darker than the floor | PT: poço do campo, mais escuro que o piso */
+    --trilho-largura-app: 248px;
+}
+
+[data-theme="light"] {
+    --erro: #A3271D;
+    --atencao: #7A5A00;
+    --campo: #FFFFFF;
+}
+
+body.app,
+body.acesso {
+    font-size: 16px;
+}
+
+/* EN: The hidden attribute always wins over component display rules
+   PT: O atributo hidden sempre vence as regras de display dos componentes */
+[hidden] {
+    display: none !important;
+}
+
+.icone {
+    flex: none;
+}
+
+/* ---------- EN: Shared pieces | PT: Peças comuns ---------- */
+
+.app-marca .logo {
+    height: 24px;
+}
+
+.botao-icone {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--linha);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    height: 38px;
+    justify-content: center;
+    list-style: none;
+    min-width: 38px;
+    text-decoration: none;
+}
+
+.botao-icone::-webkit-details-marker {
+    display: none;
+}
+
+.botao-icone:hover {
+    border-color: var(--faixa);
+}
+
+.botao-texto {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--tinta-2);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-weight: 600;
+    gap: var(--e1);
+    padding: var(--e1) 0;
+}
+
+.botao-texto:hover {
+    color: var(--tinta);
+}
+
+.botao-perigo,
+.botao-perigo:hover {
+    color: var(--erro);
+}
+
+.botao-largo {
+    width: 100%;
+}
+
+.titulo-pagina {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-stretch: 116%;
+    font-weight: 780;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.titulo-secao {
+    font-size: 1.1rem;
+    font-stretch: 108%;
+    font-weight: 720;
+}
+
+.subtitulo {
+    color: var(--tinta-2);
+    margin-top: 6px;
+}
+
+.dica {
+    color: var(--tinta-2);
+    display: block;
+    font-size: 0.88rem;
+}
+
+.nota-rodape {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    margin-top: var(--e4);
+}
+
+/* EN: Plates: the app's containers, one elevation (border only) | PT: Chapas: os contêineres do sistema, uma elevação (só borda) */
+.chapa {
+    background: var(--piso-2);
+    border: 1px solid var(--linha);
+    border-radius: var(--raio);
+    display: grid;
+    gap: var(--e3);
+    padding: var(--e4);
+}
+
+.chapa + .chapa {
+    margin-top: var(--e3);
+}
+
+.chapa-topo {
+    align-items: start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    justify-content: space-between;
+}
+
+.chapa-destaque {
+    border-color: var(--faixa);
+    margin-bottom: var(--e3);
+}
+
+.cabecalho-pagina {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e3);
+    justify-content: space-between;
+    margin-bottom: var(--e4);
+}
+
+.linha-dado {
+    align-items: baseline;
+    border-top: 1px dotted var(--linha);
+    display: flex;
+    gap: var(--e2);
+    padding-top: var(--e2);
+}
+
+.linha-dado span:first-child {
+    color: var(--tinta-2);
+}
+
+.linha-dado b {
+    font-size: 1.15rem;
+}
+
+/* ---------- EN: Notices | PT: Avisos ---------- */
+
+.avisos {
+    display: grid;
+    gap: var(--e1);
+    margin-bottom: var(--e3);
+}
+
+.aviso {
+    align-items: start;
+    background: var(--piso-2);
+    border: 1px solid var(--linha);
+    border-radius: var(--raio);
+    display: flex;
+    gap: var(--e2);
+    margin-bottom: var(--e3);
+    padding: 12px var(--e2);
+}
+
+.avisos .aviso {
+    margin: 0;
+}
+
+.aviso p,
+.aviso ul {
+    flex: 1;
+    margin: 0;
+}
+
+.aviso ul {
+    padding-left: var(--e3);
+}
+
+.aviso .icone {
+    margin-top: 2px;
+}
+
+.aviso-erro {
+    border-color: var(--erro);
+}
+
+.aviso-erro .icone {
+    color: var(--erro);
+}
+
+.aviso-atencao {
+    border-color: var(--atencao);
+}
+
+.aviso-atencao .icone {
+    color: var(--atencao);
+}
+
+.aviso-sucesso {
+    border-color: var(--faixa);
+}
+
+.aviso-sucesso .icone {
+    color: var(--faixa-texto);
+}
+
+.aviso-fechar {
+    border: 0;
+    height: 24px;
+    min-width: 24px;
+}
+
+/* ---------- EN: Forms | PT: Formulários ---------- */
+
+.formulario {
+    display: grid;
+    gap: var(--e3);
+}
+
+.campo {
+    display: grid;
+    gap: 6px;
+}
+
+.campo label,
+.tipos-conta legend {
+    font-size: 0.92rem;
+    font-weight: 620;
+}
+
+.campo input,
+.campo select,
+.campo textarea,
+.email-copiar input {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    font: inherit;
+    height: 48px;
+    padding: 0 14px;
+    width: 100%;
+}
+
+/* EN: textareas grow with content height, not a fixed 48px | PT: textareas crescem com o conteúdo, sem altura fixa de 48px */
+.campo textarea {
+    height: auto;
+    line-height: 1.5;
+    padding: 10px 14px;
+    resize: vertical;
+}
+
+.campo input::placeholder,
+.campo textarea::placeholder {
+    color: var(--tinta-2);
+    opacity: 0.7;
+}
+
+.campo input:hover,
+.campo select:hover {
+    border-color: var(--tinta-2);
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus,
+.email-copiar input:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+.campo input[readonly] {
+    border-style: dashed;
+    color: var(--tinta-2);
+}
+
+.campos-dupla {
+    display: grid;
+    gap: var(--e3);
+    grid-template-columns: 1fr 1fr;
+}
+
+/* EN: Percent field: the number aligned right with a fixed "%" | PT: Campo de porcentagem: número à direita com "%" fixo */
+.entrada-sufixo {
+    display: flex;
+    max-width: 200px;
+}
+
+.entrada-sufixo input {
+    border-right: 0;
+    font-size: 1.15rem;
+    font-weight: 650;
+    text-align: right;
+}
+
+.entrada-sufixo span {
+    align-items: center;
+    background: var(--piso-3);
+    border-radius: 0 var(--raio) var(--raio) 0;
+    display: flex;
+    font-weight: 700;
+    padding: 0 14px;
+}
+
+/* EN: Account type: two selectable plates | PT: Tipo de conta: duas chapas selecionáveis */
+.tipos-conta {
+    border: 0;
+    display: grid;
+    gap: var(--e1);
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+    padding: 0;
+}
+
+.tipos-conta legend {
+    margin-bottom: var(--e1);
+    padding: 0;
+}
+
+.tipo-conta input {
+    opacity: 0;
+    position: absolute;
+}
+
+.tipo-conta-corpo {
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    cursor: pointer;
+    display: grid;
+    gap: 2px;
+    height: 100%;
+    padding: 14px var(--e2);
+}
+
+.tipo-conta-corpo .icone {
+    color: var(--tinta-2);
+    margin-bottom: 6px;
+}
+
+.tipo-conta-corpo small {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+.tipo-conta input:checked + .tipo-conta-corpo {
+    background: var(--piso-2);
+    border-color: var(--faixa);
+    box-shadow: inset 0 0 0 1px var(--faixa);
+}
+
+.tipo-conta input:checked + .tipo-conta-corpo .icone {
+    color: var(--faixa-texto);
+}
+
+.tipo-conta input:focus-visible + .tipo-conta-corpo {
+    outline: 2px solid var(--faixa);
+    outline-offset: 3px;
+}
+
+.acoes-linha {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+}
+
+.acoes-coluna {
+    display: grid;
+    gap: var(--e2);
+    margin-top: var(--e3);
+}
+
+.email-copiar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e1);
+}
+
+.email-copiar input {
+    flex: 1 1 260px;
+    width: auto;
+}
+
+/* ---------- EN: Dynamic ruler (ceilings from data) | PT: Régua dinâmica (tetos vindos dos dados) ---------- */
+
+/* EN: --escala = ruler max in %, --vendedor / --gerente = ceilings in %
+   PT: --escala = máximo da régua em %, --vendedor / --gerente = tetos em % */
+.regua-dinamica {
+    --em: calc(100% / var(--escala, 20));
+}
+
+.regua-dinamica .zona-gerente {
+    left: calc(var(--em) * var(--vendedor));
+    width: calc(var(--em) * (var(--gerente) - var(--vendedor)));
+}
+
+.regua-dinamica .zona-dono {
+    left: calc(var(--em) * var(--gerente));
+}
+
+.regua-dinamica .batente-vendedor {
+    left: calc(var(--em) * var(--vendedor) - 2px);
+}
+
+.regua-dinamica .batente-gerente {
+    left: calc(var(--em) * var(--gerente) - 2px);
+}
+
+.regua-dinamica .legenda-vendedor {
+    left: calc(var(--em) * var(--vendedor) + 10px);
+}
+
+/* EN: The manager label sits to the LEFT of its stop, so a high ceiling never runs off the edge
+   PT: A legenda do gerente fica à ESQUERDA do batente, então um teto alto nunca sai pela borda */
+.regua-dinamica .legenda-gerente {
+    left: calc(var(--em) * var(--gerente) - 10px);
+    translate: -100% 0;
+}
+
+.regua-painel-app {
+    margin: var(--e2) 0 0;
+}
+
+.regua-painel-app .regua-legenda {
+    height: 3.2em;
+}
+
+.regua-painel-app .legenda-gerente {
+    top: 1.5em;
+}
+
+.tag-plano {
+    border: 1px dashed var(--tinta-2);
+    color: var(--tinta-2);
+    font-size: 0.78rem;
+    padding: 1px 8px;
+}
+
+/* ---------- EN: App shell | PT: Casca do sistema ---------- */
+
+body.app {
+    display: grid;
+    grid-template-columns: var(--trilho-largura-app) minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.app-topo-movel,
+.app-topo-simples {
+    display: none;
+}
+
+/* EN: The rail: the landing page's floor lane turned into the menu
+   PT: O trilho: a faixa de piso da página inicial virou o menu */
+.app-trilho {
+    border-right: 1px solid var(--linha);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e4);
+    height: 100vh;
+    padding: var(--e3) var(--e2) var(--e3) var(--e3);
+    position: sticky;
+    top: 0;
+}
+
+.app-trilho::before {
+    background:
+        repeating-linear-gradient(180deg, var(--linha) 0 1px, transparent 1px 12px) 0 0 / 6px 100% no-repeat;
+    bottom: 0;
+    content: "";
+    left: 8px;
+    position: absolute;
+    top: 0;
+    width: 6px;
+}
+
+.app-nav {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.app-nav-item {
+    align-items: center;
+    border-radius: var(--raio);
+    color: var(--tinta-2);
+    display: flex;
+    font-size: 0.86rem;
+    font-stretch: 78%;
+    font-weight: 680;
+    gap: 12px;
+    letter-spacing: 0.08em;
+    padding: 10px 12px;
+    position: relative;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.app-nav-item:hover {
+    background: var(--piso-2);
+    color: var(--tinta);
+}
+
+.app-nav-item[aria-current="page"] {
+    background: var(--piso-2);
+    color: var(--tinta);
+}
+
+.app-nav-item[aria-current="page"] .icone {
+    color: var(--faixa-texto);
+}
+
+/* EN: The lane pointer marks where you are | PT: O ponteiro da faixa marca onde você está */
+.app-nav-ponteiro {
+    height: 3px;
+    left: -18px;
+    position: absolute;
+    top: calc(50% - 1.5px);
+    width: 0;
+}
+
+[aria-current="page"] .app-nav-ponteiro {
+    background: var(--faixa);
+    width: 18px;
+}
+
+.app-conta {
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e2);
+    margin-top: auto;
+    padding-top: var(--e3);
+}
+
+.conta-distribuidora {
+    display: grid;
+    gap: 2px;
+}
+
+.conta-distribuidora .etiqueta-endereco {
+    color: var(--faixa-texto);
+    font-size: 0.72rem;
+}
+
+.conta-distribuidora strong {
+    font-size: 0.98rem;
+    line-height: 1.25;
+}
+
+.conta-cargo,
+.conta-rotulo {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+.conta-trocar {
+    display: grid;
+    gap: 2px;
+}
+
+.conta-opcao {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: var(--raio);
+    color: var(--tinta-2);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 0.88rem;
+    gap: var(--e1);
+    padding: 6px 4px;
+    text-align: left;
+    width: 100%;
+}
+
+.conta-opcao:hover,
+.conta-opcao[aria-current="true"] {
+    color: var(--tinta);
+}
+
+.conta-opcao[aria-current="true"] .icone {
+    color: var(--faixa-texto);
+}
+
+.conta-usuario {
+    align-items: start;
+    color: var(--tinta-2);
+    display: flex;
+    gap: var(--e1);
+    min-width: 0;
+}
+
+.conta-usuario span {
+    display: grid;
+    min-width: 0;
+}
+
+.conta-usuario strong {
+    color: var(--tinta);
+    font-size: 0.9rem;
+}
+
+.conta-usuario small {
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.conta-acoes {
+    align-items: center;
+    display: flex;
+    gap: var(--e1);
+}
+
+.conta-sair {
+    margin-left: auto;
+}
+
+.app-principal {
+    margin: 0 auto;
+    max-width: 1160px;
+    padding: var(--e5) var(--e5) var(--e6);
+    width: 100%;
+}
+
+/* ---------- EN: Menus (<details>) | PT: Menus (<details>) ---------- */
+
+.menu {
+    position: relative;
+}
+
+.menu summary {
+    cursor: pointer;
+}
+
+.menu-painel {
+    background: var(--piso-2);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.6);
+    display: grid;
+    gap: 2px;
+    min-width: 240px;
+    padding: var(--e1);
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 30;
+}
+
+.menu-painel hr {
+    border: 0;
+    border-top: 1px solid var(--linha);
+    margin: 4px 0;
+    width: 100%;
+}
+
+.menu-item {
+    background: none;
+    border: 0;
+    border-radius: var(--raio);
+    color: var(--tinta);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.92rem;
+    padding: 10px 12px;
+    text-align: left;
+    width: 100%;
+}
+
+.menu-item:hover {
+    background: var(--piso-3);
+}
+
+.menu-perigo {
+    color: var(--erro);
+}
+
+/* ---------- EN: Dashboard | PT: Painel ---------- */
+
+.medidores {
+    display: grid;
+    gap: var(--e4);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.medidor {
+    display: grid;
+    gap: 10px;
+}
+
+.medidor-topo {
+    align-items: baseline;
+    display: flex;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+.medidor-rotulo {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+}
+
+.medidor-valor {
+    align-items: baseline;
+    display: flex;
+    font-size: 1.5rem;
+    font-stretch: 110%;
+    font-weight: 780;
+    gap: 6px;
+}
+
+.medidor-limite {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    font-stretch: 100%;
+    font-weight: 500;
+}
+
+/* EN: Meter = a short floor lane; near the limit it gets hatched, at the limit it hits a stop
+   PT: Medidor = um trecho de faixa; perto do limite ganha hachura, no limite bate num batente */
+.medidor-faixa {
+    background: var(--piso-3);
+    height: 8px;
+    position: relative;
+}
+
+/* EN: --uso is a fraction (0 to 1); scaleX animates on the GPU instead of width
+   PT: --uso é uma fração (0 a 1); scaleX anima na placa de vídeo em vez da largura */
+.medidor-faixa span {
+    background: var(--faixa);
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: scaleX(var(--uso));
+    transform-origin: left;
+    transition: transform 0.9s var(--suave);
+}
+
+.medidor-quase .medidor-faixa span {
+    background:
+        repeating-linear-gradient(-45deg, rgba(11, 42, 51, 0.45) 0 2px, transparent 2px 7px),
+        var(--faixa);
+}
+
+.medidor-cheio .medidor-faixa::after {
+    background: var(--tinta);
+    bottom: -5px;
+    content: "";
+    position: absolute;
+    right: -2px;
+    top: -5px;
+    width: 4px;
+}
+
+.medidor-ilimitado .medidor-faixa {
+    background: repeating-linear-gradient(90deg, var(--piso-3) 0 10px, transparent 10px 16px);
+}
+
+.medidor-nota {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+/* ---------- EN: Team | PT: Equipe ---------- */
+
+.grade-equipe {
+    align-items: start;
+    display: grid;
+    gap: var(--e3);
+    grid-template-columns: minmax(0, 8fr) minmax(280px, 5fr);
+}
+
+.coluna-lateral {
+    display: grid;
+    gap: var(--e3);
+}
+
+.coluna-lateral .chapa + .chapa,
+.grade-equipe > .chapa + .chapa {
+    margin-top: 0;
+}
+
+/* EN: A grid after a plate keeps the same rhythm as plate after plate
+   PT: Uma grade depois de uma chapa mantém o mesmo ritmo de chapa depois de chapa */
+.chapa + .grade-equipe {
+    margin-top: var(--e3);
+}
+
+.tabela {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.tabela th {
+    border-bottom: 1px solid var(--linha);
+    color: var(--tinta-2);
+    font-size: 0.78rem;
+    font-stretch: 78%;
+    font-weight: 680;
+    letter-spacing: 0.08em;
+    padding: 0 0 10px;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.tabela td {
+    border-bottom: 1px solid var(--linha);
+    padding: 14px 0;
+    vertical-align: middle;
+}
+
+.tabela tr:last-child td {
+    border-bottom: 0;
+}
+
+.celula-sub {
+    color: var(--tinta-2);
+    display: block;
+    font-size: 0.85rem;
+}
+
+.coluna-acao {
+    text-align: right;
+    width: 56px;
+}
+
+.coluna-acao .menu {
+    display: inline-block;
+}
+
+/* EN: Role tags: printed rack labels; weight of the label = weight of the role
+   PT: Etiquetas de cargo: rótulos impressos; o peso da etiqueta = o peso do cargo */
+.tag-cargo {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-stretch: 75%;
+    font-weight: 720;
+    letter-spacing: 0.08em;
+    padding: 3px 8px 2px;
+    text-transform: uppercase;
+}
+
+.tag-owner {
+    background: var(--tinta);
+    color: var(--piso);
+}
+
+.tag-admin {
+    box-shadow: inset 0 0 0 1.5px var(--tinta);
+}
+
+.tag-member {
+    outline: 1.5px dashed var(--tinta-2);
+    outline-offset: -1.5px;
+    color: var(--tinta-2);
+}
+
+.tag-voce {
+    color: var(--faixa-texto);
+    font-size: 0.8rem;
+    font-weight: 650;
+}
+
+.lista-pendentes {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-pendentes li {
+    align-items: center;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.lista-pendentes li:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.linha-aguardando {
+    border-top: 2px dashed var(--tinta-2);
+    flex: 0 0 20px;
+}
+
+.pendente-texto {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.pendente-texto strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pendente-texto small {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+/* ---------- EN: Customers | PT: Clientes ---------- */
+
+/* EN: Filter bar: search grows, selects keep their size | PT: Barra de filtros: a busca cresce, os selects mantêm o tamanho */
+.filtros {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e1);
+    margin-bottom: var(--e3);
+}
+
+.filtros .campo {
+    flex: 0 1 220px;
+}
+
+.filtros .campo-busca {
+    flex: 1 1 320px;
+    position: relative;
+}
+
+.campo-busca .icone {
+    color: var(--tinta-2);
+    left: 14px;
+    position: absolute;
+    top: 15px;
+}
+
+.campo-busca input {
+    padding-left: 42px;
+}
+
+.campo-busca input::-webkit-search-cancel-button {
+    filter: grayscale(1);
+}
+
+.chapa-tabela {
+    padding: var(--e1) var(--e4);
+}
+
+.link-linha {
+    text-decoration: none;
+}
+
+.link-linha:hover strong {
+    text-decoration: underline;
+    text-decoration-color: var(--faixa);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+}
+
+.coluna-numero {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    width: 90px;
+}
+
+.tabela th.coluna-numero {
+    text-align: right;
+}
+
+.tabela-clientes td:last-child {
+    padding-left: var(--e2);
+}
+
+/* EN: Segment: a small floor-marking tag | PT: Segmento: uma etiqueta pequena de marcação de piso */
+.tag-segmento {
+    border: 1px solid var(--piso-3);
+    display: inline-block;
+    font-size: 0.82rem;
+    padding: 2px 8px;
+}
+
+/* EN: Two-column form on wide screens | PT: Formulário em duas colunas em tela larga */
+.formulario-largo {
+    grid-template-columns: 1fr 1fr;
+    max-width: 860px;
+}
+
+.campo-inteiro {
+    grid-column: 1 / -1;
+}
+
+/* EN: Data sheet: ruled rows like a packing list | PT: Ficha: linhas pautadas como um romaneio */
+.ficha {
+    display: grid;
+    margin: 0;
+}
+
+.ficha div {
+    align-items: baseline;
+    border-top: 1px dotted var(--linha);
+    display: grid;
+    gap: var(--e2);
+    grid-template-columns: 140px 1fr;
+    padding: 12px 0;
+}
+
+.ficha div:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.ficha dt {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+}
+
+.ficha dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.lista-contatos {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-contatos li {
+    align-items: center;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    gap: var(--e1);
+    padding: 12px 0;
+}
+
+.lista-contatos li:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.contato-texto {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.contato-texto small {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+/* EN: Folded inline form (<details>) | PT: Formulário dobrável (<details>) */
+.dobra {
+    border-top: 1px solid var(--linha);
+    padding-top: var(--e3);
+}
+
+.dobra summary {
+    list-style: none;
+}
+
+.dobra summary::-webkit-details-marker {
+    display: none;
+}
+
+.dobra[open] summary {
+    margin-bottom: var(--e3);
+}
+
+@media (max-width: 860px) {
+    .filtros .campo,
+    .filtros .campo-busca {
+        flex: 1 1 100%;
+    }
+
+    .chapa-tabela {
+        padding: var(--e1) var(--e3);
+    }
+
+    /* EN: Customer table stacks: name + WhatsApp on top, details below
+       PT: A tabela de clientes empilha: nome + WhatsApp em cima, detalhes embaixo */
+    .tabela-clientes thead {
+        display: none;
+    }
+
+    .tabela-clientes tr {
+        border-bottom: 1px solid var(--linha);
+        display: grid;
+        gap: 4px var(--e2);
+        grid-template-columns: 1fr auto;
+        padding: 14px 0;
+    }
+
+    .tabela-clientes tr:last-child {
+        border-bottom: 0;
+    }
+
+    .tabela-clientes td {
+        border: 0;
+        padding: 0;
+    }
+
+    .tabela-clientes td:nth-child(2),
+    .tabela-clientes td:nth-child(3) {
+        font-size: 0.88rem;
+        grid-column: 1;
+    }
+
+    .tabela-clientes td:nth-child(4) {
+        display: none;
+    }
+
+    .tabela-clientes td:last-child {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        padding: 0;
+    }
+
+    .formulario-largo {
+        grid-template-columns: 1fr;
+    }
+
+    .ficha div {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+}
+
+/* ---------- EN: Products | PT: Produtos ---------- */
+
+/* EN: SKU printed like a rack-location code | PT: SKU impresso como um código de endereço */
+.sku {
+    color: var(--tinta-2);
+    display: block;
+    font-size: 0.78rem;
+    font-stretch: 75%;
+    font-weight: 680;
+    letter-spacing: 0.08em;
+}
+
+.produto-nome {
+    margin-right: var(--e1);
+}
+
+/* EN: Inactive = struck through, like a cancelled line on a packing list
+   PT: Inativo = riscado, como uma linha cancelada no romaneio */
+.produto-inativo td {
+    color: var(--tinta-2);
+}
+
+.produto-inativo .produto-nome {
+    text-decoration: line-through;
+    text-decoration-color: var(--tinta-2);
+}
+
+/* EN: Margin: value + a tiny bar (0 to 50%) | PT: Margem: valor + uma barrinha (0 a 50%) */
+.margem {
+    align-items: center;
+    display: inline-flex;
+    gap: var(--e1);
+    justify-content: flex-end;
+}
+
+.margem-barra {
+    background: var(--piso-3);
+    height: 4px;
+    position: relative;
+    width: 40px;
+}
+
+.margem-barra::after {
+    background: var(--faixa);
+    bottom: 0;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: scaleX(var(--m));
+    transform-origin: left;
+}
+
+.margem-negativa {
+    color: var(--erro);
+}
+
+/* EN: Money columns sized by their content, never squeezed into the margin bar
+   PT: Colunas de dinheiro do tamanho do conteúdo, nunca espremidas contra a barra de margem */
+.tabela-produtos .coluna-numero {
+    padding-left: var(--e3);
+    white-space: nowrap;
+    width: auto;
+}
+
+.entrada-sku {
+    font-stretch: 85%;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* EN: "R$" block before the price | PT: Bloco "R$" antes do preço */
+.entrada-prefixo {
+    display: flex;
+}
+
+.entrada-prefixo span {
+    align-items: center;
+    background: var(--piso-3);
+    border-radius: var(--raio) 0 0 var(--raio);
+    display: flex;
+    font-weight: 700;
+    padding: 0 14px;
+}
+
+.entrada-prefixo input {
+    font-size: 1.1rem;
+    font-weight: 650;
+}
+
+.rotulo-campo {
+    font-size: 0.92rem;
+    font-weight: 620;
+}
+
+.rotulo-campo small {
+    color: var(--tinta-2);
+    font-weight: 500;
+}
+
+.custo-linha {
+    display: flex;
+    gap: var(--e1);
+}
+
+.custo-linha input {
+    flex: 1;
+}
+
+/* EN: Two-option switch (R$ / %) | PT: Seletor de duas opções (R$ / %) */
+.alternador {
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    display: flex;
+    padding: 3px;
+}
+
+/* EN: the invisible radio covers its own button, so clicks and taps land on it
+   PT: o rádio invisível cobre o próprio botão, então cliques e toques caem nele */
+.alternador label {
+    cursor: pointer;
+    position: relative;
+}
+
+.alternador input {
+    cursor: pointer;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    position: absolute;
+}
+
+.alternador span {
+    align-items: center;
+    border-radius: var(--raio);
+    display: flex;
+    font-weight: 700;
+    height: 40px;
+    justify-content: center;
+    min-width: 44px;
+}
+
+.alternador input:checked + span {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+}
+
+.alternador input:focus-visible + span {
+    outline: 2px solid var(--faixa);
+    outline-offset: 2px;
+}
+
+.previa-margem {
+    border-top: 1px dotted var(--linha);
+    color: var(--tinta-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e4);
+    padding-top: var(--e2);
+}
+
+.previa-margem b {
+    color: var(--tinta);
+    font-size: 1.1rem;
+    margin-left: 6px;
+}
+
+.previa-margem b.margem-negativa {
+    color: var(--erro);
+}
+
+/* EN: Money columns sized by their content, never squeezed into the margin bar
+   PT: Colunas de dinheiro do tamanho do conteúdo, nunca espremidas contra a barra de margem */
+.tabela-produtos .coluna-numero {
+    padding-left: var(--e3);
+    white-space: nowrap;
+    width: auto;
+}
+
+@media (max-width: 860px) {
+    .tabela-produtos thead {
+        display: none;
+    }
+
+    .tabela-produtos tr {
+        border-bottom: 1px solid var(--linha);
+        display: grid;
+        gap: 4px var(--e2);
+        grid-template-columns: 1fr auto;
+        padding: 14px 0;
+    }
+
+    .tabela-produtos tr:last-child {
+        border-bottom: 0;
+    }
+
+    .tabela-produtos td {
+        border: 0;
+        padding: 0;
+    }
+
+    .tabela-produtos td:nth-child(2) {
+        display: none;
+    }
+
+    .tabela-produtos td:nth-child(3),
+    .tabela-produtos td:nth-child(4),
+    .tabela-produtos td:nth-child(5) {
+        font-size: 0.9rem;
+        grid-column: 1;
+        text-align: left;
+    }
+
+    .tabela-produtos .margem {
+        justify-content: flex-start;
+    }
+
+    /* EN: On phones each value carries its label | PT: No celular cada valor leva o seu rótulo */
+    .tabela-produtos td[data-rotulo] {
+        display: flex;
+        gap: var(--e1);
+        padding-left: 0;
+    }
+
+    .tabela-produtos td[data-rotulo]::before {
+        color: var(--tinta-2);
+        content: attr(data-rotulo) ":";
+        min-width: 112px;
+    }
+
+    .tabela-produtos td.coluna-acao {
+        grid-column: 2;
+        grid-row: 1 / span 4;
+    }
+}
+
+/* ---------- EN: Pipeline board | PT: Quadro do funil ---------- */
+
+/* EN: Columns side by side; on narrow screens the board scrolls sideways with snap
+   PT: Colunas lado a lado; em telas estreitas o quadro rola de lado com encaixe */
+.quadro {
+    display: grid;
+    gap: var(--e2);
+    grid-auto-columns: minmax(184px, 1fr);
+    grid-auto-flow: column;
+    overflow-x: auto;
+    padding-bottom: var(--e2);
+    scroll-snap-type: x mandatory;
+}
+
+.coluna {
+    background: var(--piso-2);
+    border: 1px solid var(--linha);
+    border-radius: var(--raio);
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+    scroll-snap-align: start;
+}
+
+.coluna-topo {
+    align-items: baseline;
+    border-bottom: 1px solid var(--linha);
+    display: grid;
+    gap: 2px var(--e1);
+    grid-template-columns: 1fr auto;
+    padding: var(--e2) var(--e2) 12px;
+    position: relative;
+}
+
+/* EN: Column line form: open = solid ink, won = aqua, lost = struck
+   PT: Forma de linha da coluna: aberta = tinta, ganha = verde-água, perdida = riscada */
+.coluna-linha {
+    border-top: 3px solid var(--tinta-2);
+    left: -1px;
+    position: absolute;
+    right: -1px;
+    top: -1px;
+}
+
+.coluna-won .coluna-linha {
+    border-top-color: var(--faixa);
+}
+
+.coluna-lost .coluna-linha {
+    border-top: 3px dashed var(--tinta-2);
+}
+
+.coluna-topo h2 {
+    font-size: 0.86rem;
+    font-stretch: 78%;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.coluna-conta {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+.coluna-total {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    grid-column: 1 / -1;
+}
+
+.cartoes {
+    display: grid;
+    gap: var(--e1);
+    list-style: none;
+    margin: 0;
+    padding: var(--e1);
+}
+
+.cartao {
+    background: var(--piso);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+}
+
+.cartao:hover {
+    border-color: var(--tinta-2);
+}
+
+.cartao-link {
+    display: grid;
+    gap: 2px;
+    text-decoration: none;
+}
+
+.cartao-link strong {
+    line-height: 1.3;
+}
+
+.cartao-cliente,
+.cartao-dono,
+.cartao-data {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+.cartao-rodape {
+    align-items: center;
+    display: flex;
+    gap: var(--e1);
+}
+
+.cartao-rodape {
+    flex-wrap: wrap;
+}
+
+.cartao-rodape .menu {
+    margin-left: auto;
+}
+
+/* EN: Inside a card the move menu opens in place (pushes the card down), so the board's
+       sideways scroll can never clip it
+   PT: Dentro do cartão o menu de mover abre no lugar (empurra o cartão para baixo), então a
+       rolagem lateral do quadro nunca o corta */
+.cartao .menu[open] {
+    flex-basis: 100%;
+    margin-left: 0;
+}
+
+.cartao .menu[open] summary {
+    margin-left: auto;
+}
+
+.cartao .menu-painel {
+    box-shadow: none;
+    margin-top: 6px;
+    min-width: 0;
+    position: static;
+}
+
+.cartao-vazio {
+    border: 1px dashed var(--piso-3);
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    padding: var(--e2);
+    text-align: center;
+}
+
+.coluna-lost .cartao-link strong {
+    text-decoration: line-through;
+    text-decoration-color: var(--tinta-2);
+}
+
+.botao-mini {
+    height: 30px;
+    min-width: 30px;
+}
+
+.menu-titulo {
+    color: var(--tinta-2);
+    font-size: 0.75rem;
+    font-stretch: 78%;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 6px 12px 2px;
+    text-transform: uppercase;
+}
+
+/* ---------- EN: Opportunity page | PT: Página da oportunidade ---------- */
+
+/* EN: Stage track: the floor lane with one stop per stage
+   PT: Trilho de etapas: a faixa do piso com uma parada por etapa */
+.trilho-etapas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.parada {
+    flex: 1 1 120px;
+    position: relative;
+}
+
+.parada::before {
+    background: var(--piso-3);
+    content: "";
+    height: 4px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 13px;
+}
+
+.parada:first-child::before {
+    left: 13px;
+}
+
+.parada-botao {
+    align-items: start;
+    background: none;
+    border: 0;
+    color: var(--tinta-2);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font: inherit;
+    font-size: 0.9rem;
+    gap: 10px;
+    list-style: none;
+    padding: 0 var(--e1) 0 0;
+    position: relative;
+    text-align: left;
+}
+
+.parada-botao::-webkit-details-marker {
+    display: none;
+}
+
+.parada-botao:hover {
+    color: var(--tinta);
+}
+
+.parada-marca {
+    background: var(--piso);
+    border: 3px solid var(--tinta-2);
+    display: block;
+    height: 30px;
+    width: 30px;
+}
+
+.parada-won .parada-marca {
+    border-color: var(--faixa);
+}
+
+.parada-lost .parada-marca {
+    border-style: dashed;
+}
+
+/* EN: The current stop carries the pointer | PT: A parada atual leva o ponteiro */
+.parada-atual .parada-botao {
+    color: var(--tinta);
+    cursor: default;
+    font-weight: 700;
+}
+
+.parada-atual .parada-marca {
+    background: var(--faixa);
+    border-color: var(--faixa);
+}
+
+.parada-atual.parada-lost .parada-marca {
+    background: var(--tinta-2);
+    border-color: var(--tinta-2);
+}
+
+.parada .menu-painel {
+    left: 0;
+    min-width: 280px;
+    right: auto;
+}
+
+.valor-grande {
+    font-size: 1.4rem;
+    font-stretch: 110%;
+}
+
+.linha-tempo {
+    display: grid;
+    gap: var(--e2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.linha-tempo li {
+    align-items: start;
+    display: flex;
+    gap: 12px;
+}
+
+.linha-tempo-marca {
+    border: 2px solid var(--tinta-2);
+    flex: none;
+    height: 12px;
+    margin-top: 5px;
+    width: 12px;
+}
+
+.linha-tempo span:last-child {
+    display: grid;
+}
+
+.linha-tempo small {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+.dica-inline {
+    color: var(--tinta-2);
+    font-weight: 500;
+}
+
+.campo-inteiro-grade {
+    grid-column: 1 / -1;
+}
+
+/* ---------- EN: Pipeline settings | PT: Configuração do funil ---------- */
+
+.bloco-dica {
+    margin-bottom: var(--e3);
+    max-width: 70ch;
+}
+
+.renomear {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    gap: var(--e1);
+    min-width: 0;
+}
+
+.renomear input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+    color: var(--tinta);
+    font: inherit;
+    min-width: 0;
+    padding: 6px 8px;
+    width: 100%;
+}
+
+/* EN: Save appears only while that line is being edited | PT: O Salvar só aparece enquanto aquela linha é editada */
+.renomear button {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.renomear:hover button,
+.renomear:focus-within button {
+    opacity: 1;
+}
+
+.renomear input:hover {
+    border-color: var(--piso-3);
+}
+
+.renomear input:focus {
+    background: var(--campo);
+    border-color: var(--faixa);
+    outline: none;
+}
+
+.entrada-titulo {
+    font-size: 1.1rem;
+    font-weight: 720;
+}
+
+.lista-etapas {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-etapas li {
+    align-items: center;
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e2);
+    grid-template-columns: 28px minmax(0, 1fr) auto auto auto;
+    padding: 10px 0;
+}
+
+.etapa-linha {
+    border-top: 3px solid var(--tinta-2);
+    display: block;
+    width: 24px;
+}
+
+.etapa-won {
+    border-top-color: var(--faixa);
+}
+
+.etapa-lost {
+    border-top-style: dashed;
+}
+
+.tag-tipo {
+    border: 1px solid var(--piso-3);
+    font-size: 0.75rem;
+    font-stretch: 78%;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+}
+
+.tag-won {
+    border-color: var(--faixa);
+    color: var(--faixa-texto);
+}
+
+.tag-lost {
+    border-style: dashed;
+}
+
+.etapa-uso {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.etapa-acoes {
+    display: flex;
+    gap: 4px;
+}
+
+.adicionar-etapa {
+    align-items: end;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    padding-top: var(--e3);
+}
+
+.adicionar-etapa .campo {
+    flex: 1 1 200px;
+}
+
+@media (max-width: 860px) {
+    .quadro {
+        grid-auto-columns: 82%;
+        margin: 0 calc(var(--e2) * -1);
+        padding: 0 var(--e2) var(--e2);
+        scroll-padding: 0 var(--e2);
+    }
+
+    .trilho-etapas {
+        flex-direction: column;
+        gap: var(--e2);
+    }
+
+    .parada {
+        flex: none;
+    }
+
+    .parada::before {
+        bottom: -16px;
+        height: auto;
+        left: 13px;
+        right: auto;
+        top: 30px;
+        width: 4px;
+    }
+
+    .parada:last-child::before {
+        display: none;
+    }
+
+    .parada-botao {
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .lista-etapas li {
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+    }
+
+    .etapa-uso {
+        display: none;
+    }
+
+    .etapa-acoes {
+        grid-column: 2 / -1;
+    }
+}
+
+/* ---------- EN: Quotes | PT: Orçamentos ---------- */
+
+/* EN: Quote status: line form + word, like everywhere else
+   PT: Status do orçamento: forma de linha + palavra, como em todo o resto */
+.estado-orcamento {
+    align-items: center;
+    display: inline-flex;
+    font-size: 0.82rem;
+    font-weight: 650;
+    gap: var(--e1);
+    white-space: nowrap;
+}
+
+.estado-traco {
+    border-top: 3px dotted var(--tinta-2);
+    display: inline-block;
+    width: 22px;
+}
+
+.estado-pending_approval .estado-traco,
+.estado-sent .estado-traco {
+    border-top-style: dashed;
+    border-top-color: var(--tinta);
+}
+
+.estado-ready .estado-traco {
+    border-top-style: solid;
+    border-top-color: var(--tinta);
+}
+
+.estado-accepted .estado-traco {
+    border-top: 3px solid var(--faixa);
+}
+
+.estado-declined,
+.estado-expired,
+.estado-cancelled {
+    color: var(--tinta-2);
+    text-decoration: line-through;
+}
+
+.grade-orcamento {
+    align-items: start;
+    display: grid;
+    gap: var(--e3);
+    grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.orcamento-corpo {
+    display: grid;
+    gap: var(--e3);
+}
+
+.orcamento-corpo .chapa + .chapa {
+    margin-top: 0;
+}
+
+.tabela-itens td {
+    padding: 10px 0;
+}
+
+.tabela-itens .coluna-numero {
+    padding-left: var(--e2);
+    white-space: nowrap;
+    width: auto;
+}
+
+.entrada-curta {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    font: inherit;
+    height: 40px;
+    padding: 0 10px;
+    text-align: right;
+    width: 72px;
+}
+
+.entrada-curta:focus,
+.entrada-sufixo-curta input:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+.entrada-sufixo-curta {
+    display: inline-flex;
+}
+
+.entrada-sufixo-curta input {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio) 0 0 var(--raio);
+    border-right: 0;
+    color: var(--tinta);
+    font: inherit;
+    height: 40px;
+    padding: 0 8px;
+    text-align: right;
+    width: 64px;
+}
+
+.entrada-sufixo-curta span {
+    align-items: center;
+    background: var(--piso-3);
+    display: flex;
+    font-weight: 700;
+    padding: 0 10px;
+}
+
+.campos-orcamento {
+    display: grid;
+    gap: var(--e3);
+    grid-template-columns: 1fr 1fr;
+}
+
+.campos-orcamento textarea {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    font: inherit;
+    padding: 10px 14px;
+    resize: vertical;
+    width: 100%;
+}
+
+.campos-orcamento textarea:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+.campos-orcamento .entrada-sufixo {
+    max-width: 160px;
+}
+
+.adicionar-item-campos {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+}
+
+.campo-produto {
+    flex: 1 1 260px;
+}
+
+/* EN: Totals plate stays in view while the list is long | PT: A chapa de totais fica à vista enquanto a lista é longa */
+.totais-orcamento {
+    position: sticky;
+    top: var(--e3);
+}
+
+.totais {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+}
+
+.totais div {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+}
+
+.totais dt {
+    color: var(--tinta-2);
+    font-size: 0.92rem;
+}
+
+.totais dd {
+    font-weight: 700;
+    margin: 0;
+}
+
+.total-final-app {
+    border-top: 2px solid var(--tinta);
+    margin-top: 4px;
+    padding-top: 12px;
+}
+
+.total-final-app dd {
+    font-size: 1.8rem;
+    font-stretch: 112%;
+    font-weight: 820;
+}
+
+.regua-orcamento {
+    margin: var(--e2) 0 0;
+}
+
+.regua-orcamento .regua-legenda {
+    height: 3.2em;
+}
+
+.regua-orcamento .legenda-gerente {
+    top: 1.5em;
+}
+
+/* EN: Pointer at the effective discount | PT: Ponteiro no desconto efetivo */
+.regua-ponteiro-app {
+    background: var(--faixa);
+    bottom: -12px;
+    left: calc(var(--em) * var(--ponteiro, 0) - 1.5px);
+    position: absolute;
+    top: -16px;
+    transition: left 0.5s var(--suave);
+    width: 3px;
+}
+
+.meta-orcamento {
+    border-top: 1px dotted var(--linha);
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+    padding-top: var(--e2);
+}
+
+@media (max-width: 1100px) {
+    .grade-orcamento {
+        grid-template-columns: 1fr;
+    }
+
+    .totais-orcamento {
+        position: static;
+    }
+}
+
+@media (max-width: 860px) {
+    .tabela-itens thead,
+    .tabela-orcamentos thead {
+        display: none;
+    }
+
+    .tabela-itens tr,
+    .tabela-orcamentos tr {
+        border-bottom: 1px solid var(--linha);
+        display: grid;
+        gap: 6px var(--e2);
+        grid-template-columns: 1fr auto;
+        padding: 14px 0;
+    }
+
+    .tabela-itens td,
+    .tabela-orcamentos td {
+        border: 0;
+        padding: 0;
+    }
+
+    .tabela-itens td[data-rotulo],
+    .tabela-orcamentos td[data-rotulo] {
+        align-items: center;
+        display: flex;
+        gap: var(--e1);
+        grid-column: 1;
+        padding-left: 0;
+        text-align: left;
+    }
+
+    .tabela-orcamentos td[data-rotulo] b {
+        white-space: nowrap;
+    }
+
+    .tabela-itens td[data-rotulo]::before,
+    .tabela-orcamentos td[data-rotulo]::before {
+        color: var(--tinta-2);
+        content: attr(data-rotulo) ":";
+        min-width: 112px;
+    }
+
+    .tabela-itens td.coluna-acao {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .campos-orcamento {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- EN: Quote states and approvals | PT: Estados do orçamento e aprovações ---------- */
+
+.painel-estado {
+    gap: var(--e2);
+    margin-bottom: var(--e3);
+}
+
+.estado-mensagem {
+    align-items: start;
+    display: flex;
+    gap: 12px;
+}
+
+.estado-mensagem .estado-traco {
+    margin-top: 10px;
+}
+
+.estado-traco-ok {
+    border-top: 3px solid var(--faixa) !important;
+}
+
+/* EN: Above the ceiling: the hatched stop-zone mark | PT: Acima do teto: a marca hachurada de zona de parada */
+.estado-traco-alerta {
+    background: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 5px);
+    border-top: 0 !important;
+    height: 8px;
+}
+
+.motivos {
+    color: var(--tinta-2);
+    margin: 4px 0 0;
+    padding-left: var(--e3);
+}
+
+.acoes-secundarias {
+    align-items: center;
+    border-top: 1px dotted var(--linha);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e3);
+    padding-top: 12px;
+}
+
+.botao:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    transform: none;
+}
+
+/* EN: Quote above the creator's ceiling: the pointer turns into the stop-zone color
+   PT: Orçamento acima do teto de quem criou: o ponteiro fica na cor da zona de parada */
+.regua-acima .regua-ponteiro-app {
+    background: var(--atencao);
+}
+
+.titulo-menor {
+    font-size: 0.95rem;
+    margin-top: var(--e1);
+}
+
+.marca-discount_approved,
+.marca-quote_accepted {
+    background: var(--faixa);
+    border-color: var(--faixa);
+}
+
+.marca-discount_rejected,
+.marca-quote_declined {
+    border-style: dashed;
+}
+
+.contagem-nav {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+    font-size: 0.72rem;
+    font-stretch: 100%;
+    letter-spacing: 0;
+    margin-left: auto;
+    min-width: 20px;
+    padding: 1px 6px;
+    text-align: center;
+}
+
+.lista-aprovacoes {
+    display: grid;
+    gap: var(--e3);
+}
+
+.pedido-topo {
+    align-items: start;
+    display: flex;
+    gap: var(--e2);
+    justify-content: space-between;
+}
+
+/* EN: The requested discount, big: the number the manager is deciding on
+   PT: O desconto pedido, grande: o número que o gerente está decidindo */
+.pedido-desconto {
+    color: var(--atencao);
+    font-size: 2rem;
+    font-stretch: 115%;
+    font-weight: 820;
+    line-height: 1;
+}
+
+.ficha-compacta div {
+    grid-template-columns: 120px 1fr;
+    padding: 8px 0;
+}
+
+.pedido-acoes {
+    display: grid;
+    gap: var(--e1);
+    grid-template-columns: 1fr 1fr;
+}
+
+/* EN: Approve and reject are two separate columns, each with its own visible label
+   PT: Aprovar e recusar são duas colunas separadas, cada uma com o próprio rótulo visível */
+.pedido-form {
+    align-content: start;
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: 8px;
+    padding-top: var(--e2);
+}
+
+.pedido-form label {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+.pedido-form input {
+    height: 44px;
+}
+
+.pedido-form .botao {
+    justify-self: start;
+}
+
+.pedido-itens {
+    border-top: 1px solid var(--linha);
+    padding-top: var(--e1);
+}
+
+.pedido-itens summary {
+    color: var(--tinta-2);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.pedido-itens ul {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: var(--e1) 0 0;
+    padding: 0;
+}
+
+.pedido-itens li {
+    display: flex;
+    font-size: 0.92rem;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+/* EN: Items without cost + discount: hatched band on top, text on a plain background
+   PT: Itens sem custo + desconto: faixa hachurada no topo, texto em fundo liso */
+.aviso-sem-custo {
+    background-image: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 6px);
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: 100% 4px;
+    border: 1px dashed var(--atencao);
+    display: grid;
+    gap: 4px;
+    margin-bottom: var(--e2);
+    padding: 14px var(--e2) var(--e2);
+}
+
+.aviso-sem-custo strong {
+    color: var(--atencao);
+}
+
+.aviso-sem-custo p {
+    margin: 0;
+}
+
+.numero-extra {
+    color: var(--atencao);
+}
+
+.pedido-form input {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    flex: 1;
+    font: inherit;
+    min-width: 0;
+    padding: 0 12px;
+}
+
+.pedido-form input:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+@media (max-width: 860px) {
+    .pedido-acoes {
+        grid-template-columns: 1fr;
+    }
+
+
+    .contagem-nav {
+        position: absolute;
+        right: 18%;
+        top: 2px;
+    }
+}
+
+/* ---------- EN: Buyer portal | PT: Portal do comprador ---------- */
+
+.distribuidora {
+    display: grid;
+    gap: var(--e2);
+    margin-bottom: var(--e4);
+}
+
+/* EN: Distributor name as a rack tag | PT: Nome da distribuidora como etiqueta de prateleira */
+.distribuidora-topo {
+    align-items: center;
+    border-bottom: 2px solid var(--tinta);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    padding-bottom: 8px;
+}
+
+.distribuidora-topo .logo-distribuidora {
+    margin: 0;
+    max-height: 40px;
+}
+
+.distribuidora-topo .botao {
+    margin-left: auto;
+}
+
+.distribuidora-nome {
+    font-size: 1.05rem;
+    font-stretch: 78%;
+    font-weight: 760;
+    letter-spacing: 0.08em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.lista-portal {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item-portal {
+    align-items: center;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    gap: var(--e2);
+    min-height: 64px;
+    padding: 12px 0;
+    text-decoration: none;
+}
+
+.lista-portal li:first-child .item-portal {
+    border-top: 0;
+}
+
+.item-portal:hover strong {
+    text-decoration: underline;
+    text-decoration-color: var(--faixa);
+}
+
+.item-portal-texto {
+    display: grid;
+    flex: 1;
+}
+
+.item-portal-texto small {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+.item-portal .icone {
+    color: var(--tinta-2);
+}
+
+.tag-acao {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+    font-size: 0.72rem;
+    font-stretch: 78%;
+    font-weight: 750;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    text-transform: uppercase;
+}
+
+/* EN: The quote as a delivery note on paper | PT: O orçamento como um romaneio no papel */
+.romaneio {
+    background: var(--papel);
+    border-color: transparent;
+    color: var(--papel-tinta);
+    max-width: 720px;
+    --tinta: #17252D;
+    --tinta-2: #3E5660;
+    --linha: rgba(23, 37, 45, 0.14);
+}
+
+.romaneio-itens {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.romaneio-itens li {
+    align-items: baseline;
+    border-bottom: 1px dotted var(--linha);
+    display: flex;
+    gap: var(--e2);
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.romaneio-produto {
+    display: grid;
+}
+
+.romaneio-produto small {
+    color: var(--tinta-2);
+    font-size: 0.86rem;
+}
+
+.romaneio-totais {
+    margin-top: var(--e1);
+}
+
+.romaneio-totais .total-final-app {
+    border-top-color: var(--papel-tinta);
+}
+
+.romaneio-nota {
+    border-top: 1px dotted var(--linha);
+    padding-top: var(--e2);
+}
+
+.decisao {
+    margin-bottom: var(--e3);
+    max-width: 720px;
+}
+
+/* EN: The amount and the deadline lead the decision | PT: O valor e o prazo abrem a decisão */
+.decisao-valor {
+    border-bottom: 1px solid var(--linha);
+    display: grid;
+    gap: 2px;
+    margin-bottom: var(--e2);
+    padding-bottom: var(--e2);
+}
+
+.decisao-valor b {
+    font-size: clamp(1.8rem, 1.4rem + 1.5vw, 2.4rem);
+    font-stretch: 112%;
+    font-weight: 800;
+}
+
+.decisao-prazo {
+    color: var(--atencao);
+    font-weight: 700;
+}
+
+/* EN: One line that says what to do; aqua lane when something waits for the buyer
+   PT: Uma linha que diz o que fazer; faixa verde-água quando algo espera o comprador */
+.portal-resumo {
+    border: 1px solid var(--linha);
+    margin: 0 0 var(--e3);
+    padding: var(--e2);
+}
+
+.portal-resumo-acao {
+    border-color: var(--faixa);
+    box-shadow: inset 0 3px 0 var(--faixa);
+    font-weight: 650;
+}
+
+.cartoes-portal {
+    display: grid;
+    gap: var(--e2);
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    list-style: none;
+    margin: var(--e1) 0 0;
+    padding: 0;
+}
+
+.cartao-portal {
+    background: var(--piso-3);
+    border: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e1);
+    padding: var(--e2);
+}
+
+/* EN: Due today or tomorrow: hatched band on top (attention, never a colored glow)
+   PT: Vence hoje ou amanhã: faixa hachurada no topo (atenção, nunca um brilho colorido) */
+.cartao-portal-urgente {
+    background-image: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 6px);
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: 100% 4px;
+}
+
+.cartao-portal-topo {
+    align-items: baseline;
+    display: flex;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+.cartao-portal-prazo {
+    color: var(--atencao);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cartao-portal-itens {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.cartao-portal-rodape {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+.cartao-portal-total {
+    display: grid;
+}
+
+.cartao-portal-total b {
+    font-size: 1.25rem;
+    font-weight: 780;
+}
+
+.cartao-portal-total small {
+    color: var(--faixa-texto);
+    font-size: 0.82rem;
+}
+
+.portal-historico-titulo {
+    margin-top: var(--e3);
+}
+
+.portal-contato {
+    display: grid;
+    gap: var(--e1);
+    align-content: start;
+}
+
+.portal-contato p {
+    margin: 0;
+}
+
+.decisao .dobra summary {
+    margin-bottom: 0;
+}
+
+.decisao .dobra[open] summary {
+    margin-bottom: var(--e2);
+}
+
+.tag-trazido {
+    border: 1px solid var(--faixa);
+    color: var(--faixa-texto);
+    display: inline-block;
+    font-size: 0.7rem;
+    font-stretch: 78%;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-left: 6px;
+    padding: 1px 6px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.convite-novo {
+    border: 1px solid var(--faixa);
+    display: grid;
+    gap: var(--e1);
+    padding: var(--e2);
+}
+
+/* EN: Money and numbers never break across lines | PT: Dinheiro e números nunca quebram de linha */
+.item-portal b,
+.item-portal-texto strong,
+.romaneio-itens b {
+    white-space: nowrap;
+}
+
+/* EN: Customer page: data and contacts side by side, then the full-width sections
+   PT: Página do cliente: dados e contatos lado a lado, depois as seções de largura inteira */
+.grade-equipe > [aria-labelledby="contatos"] {
+    order: 1;
+}
+
+.grade-equipe > .campo-inteiro-grade {
+    order: 2;
+}
+
+@media (max-width: 480px) {
+    .item-portal .icone {
+        display: none;
+    }
+
+    .item-portal {
+        gap: var(--e1);
+    }
+}
+
+/* ---------- EN: Tasks and history | PT: Tarefas e histórico ---------- */
+
+.lista-tarefas {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tarefa {
+    align-items: start;
+    border-top: 1px solid var(--linha);
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.lista-tarefas .tarefa:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+/* EN: The checkbox is a real button (a POST form), drawn as a floor marker square
+   PT: A caixinha é um botão de verdade (um formulário POST), desenhada como um quadrado de marcação */
+.tarefa-caixa {
+    align-items: center;
+    background: transparent;
+    border: 2px solid var(--tinta-2);
+    color: var(--faixa-tinta);
+    cursor: pointer;
+    display: flex;
+    flex: none;
+    height: 24px;
+    justify-content: center;
+    padding: 0;
+    width: 24px;
+}
+
+.tarefa-caixa:hover {
+    border-color: var(--faixa);
+}
+
+.tarefa-caixa[aria-pressed="true"] {
+    background: var(--faixa);
+    border-color: var(--faixa);
+}
+
+.tarefa-texto {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+/* EN: The delete button stays quiet until the row is hovered or focused (always visible on touch)
+   PT: O botão de apagar fica discreto até passar o mouse ou focar a linha (sempre visível no toque) */
+.tarefa-apagar {
+    opacity: 0.35;
+    transition: opacity 0.2s var(--suave);
+}
+
+.tarefa:hover .tarefa-apagar,
+.tarefa:focus-within .tarefa-apagar {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .tarefa-apagar {
+        opacity: 1;
+    }
+}
+
+.tarefa-texto small {
+    color: var(--tinta-2);
+    font-size: 0.84rem;
+}
+
+.tarefa-done .tarefa-texto strong,
+.tarefa-caixa[aria-pressed="true"] + .tarefa-texto strong {
+    color: var(--tinta-2);
+    text-decoration: line-through;
+}
+
+/* EN: Overdue = hatched stop-zone mark, today = aqua | PT: Atrasada = marca hachurada, hoje = verde-água */
+.tarefa-overdue .tarefa-prazo {
+    align-items: center;
+    color: var(--atencao);
+    display: inline-flex;
+    font-weight: 700;
+    gap: 6px;
+}
+
+/* EN: The hatch sits beside the date, never under the text, so it stays readable
+   PT: A hachura fica ao lado da data, nunca embaixo do texto, para continuar legível */
+.tarefa-overdue .tarefa-prazo::before {
+    background: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 5px);
+    content: "";
+    height: 10px;
+    width: 14px;
+}
+
+.tarefa-today .tarefa-prazo {
+    color: var(--faixa-texto);
+    font-weight: 700;
+}
+
+.grupo-tarefas + .grupo-tarefas {
+    margin-top: var(--e3);
+}
+
+.grupo-overdue {
+    border-color: var(--atencao);
+}
+
+.contagem-grupo {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-left: 6px;
+}
+
+.coluna-tarefas {
+    display: grid;
+    gap: var(--e3);
+}
+
+.coluna-tarefas .chapa + .chapa {
+    margin-top: 0;
+}
+
+/* EN: History entry: type chips + text + button in one line on wide screens
+   PT: Registro: tipos + texto + botão numa linha em tela larga */
+.registro {
+    display: grid;
+    gap: var(--e1);
+}
+
+.registro textarea {
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    border-radius: var(--raio);
+    color: var(--tinta);
+    font: inherit;
+    padding: 10px 14px;
+    resize: vertical;
+    width: 100%;
+}
+
+.registro textarea:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+.registro .botao {
+    justify-self: start;
+}
+
+.alternador-registro {
+    justify-self: start;
+}
+
+.alternador-registro span {
+    font-size: 0.85rem;
+    height: 34px;
+    padding: 0 12px;
+}
+
+.linha-tempo-texto {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.linha-tempo-corpo {
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.marca-note,
+.marca-call,
+.marca-whatsapp {
+    border-radius: 50%;
+}
+
+.marca-task_done {
+    background: var(--tinta-2);
+}
+
+.marca-stage_change {
+    border-style: dotted;
+}
+
+.menu-item-icone {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.app-nav-mais {
+    display: none;
+}
+
+@media (max-width: 860px) {
+    .app-nav-extra {
+        display: none;
+    }
+
+    .app-nav-mais {
+        display: block;
+        position: relative;
+    }
+
+    .app-nav-mais summary {
+        list-style: none;
+    }
+
+    .app-nav-mais summary::-webkit-details-marker {
+        display: none;
+    }
+
+    /* EN: the "More" sheet opens upwards, above the bottom bar | PT: a folha "Mais" abre para cima, acima da barra */
+    .menu-mais .menu-painel {
+        bottom: calc(100% + 10px);
+        right: 0;
+        top: auto;
+    }
+}
+
+/* ---------- EN: Dashboard numbers and repurchase | PT: Números do painel e recompra ---------- */
+
+/* EN: Four plates in one row; each is a link to the list behind the number
+   PT: Quatro chapas numa linha; cada uma é um link para a lista por trás do número */
+.numeros-painel {
+    display: grid;
+    gap: var(--e3);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: var(--e3);
+}
+
+.numero-placa {
+    background: var(--piso-2);
+    border: 1px solid var(--linha);
+    color: var(--tinta);
+    display: grid;
+    gap: 6px;
+    padding: var(--e3);
+    text-decoration: none;
+    transition: border-color 0.2s var(--suave);
+}
+
+.numero-placa:hover {
+    border-color: var(--faixa);
+}
+
+.numero-placa:focus-visible {
+    outline: 2px solid var(--faixa);
+    outline-offset: 2px;
+}
+
+.numero-rotulo {
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+}
+
+.numero-valor {
+    font-size: clamp(1.25rem, 0.6rem + 1.1vw, 1.75rem);
+    font-stretch: 110%;
+    font-weight: 780;
+    line-height: 1.1;
+    min-height: 1.1em;
+}
+
+.numero-placa small {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+/* EN: Won this month = solid aqua base line; waiting approval = hatched base line
+   PT: Fechado no mês = linha de base verde-água cheia; esperando aprovação = linha hachurada */
+.numero-ganho {
+    box-shadow: inset 0 -3px 0 var(--faixa);
+}
+
+.numero-alerta {
+    background-image: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 6px);
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 4px;
+}
+
+.grade-painel + .chapa {
+    margin-top: var(--e3);
+}
+
+.lista-recompra {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.recompra {
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+}
+
+.lista-recompra .recompra:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.recompra-topo {
+    align-items: center;
+    display: flex;
+    gap: var(--e1);
+}
+
+.recompra-atraso {
+    color: var(--atencao);
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* EN: Rhythm lane: full width = days since the last order. Solid part = normal interval,
+       the stop = 1.5x (where the alert starts), hatched = everything past the normal rhythm
+   PT: Faixa de ritmo: largura toda = dias desde o último pedido. Parte cheia = intervalo normal,
+       o batente = 1,5x (onde o alerta começa), hachura = tudo além do ritmo normal */
+.ritmo {
+    background: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 6px);
+    height: 8px;
+    position: relative;
+}
+
+.ritmo-normal {
+    background: var(--faixa);
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transform: scaleX(var(--ritmo));
+    transform-origin: left;
+    width: 100%;
+}
+
+.ritmo-batente {
+    background: var(--tinta);
+    bottom: -4px;
+    left: calc(var(--batente) * 100%);
+    position: absolute;
+    top: -4px;
+    width: 3px;
+}
+
+.bloqueado {
+    display: grid;
+    gap: var(--e1);
+    justify-items: start;
+}
+
+.bloqueado p {
+    color: var(--tinta-2);
+    margin: 0;
+    max-width: 52ch;
+}
+
+.vazio-curto {
+    border: 1px dashed var(--linha);
+    color: var(--tinta-2);
+    margin: 0;
+    padding: var(--e2);
+}
+
+@media (max-width: 1100px) {
+    .numeros-painel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .numeros-painel {
+        gap: var(--e1);
+    }
+
+    .numero-placa {
+        padding: var(--e2);
+    }
+
+    .numero-valor {
+        font-size: 1.1rem;
+    }
+}
+
+/* ---------- EN: Plans page | PT: Página de planos ---------- */
+
+/* EN: Same language as the landing plans: a ruled table of four columns
+   PT: Mesma linguagem dos planos da landing: uma tabela riscada de quatro colunas */
+.planos-grade {
+    border-top: 2px solid var(--tinta);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.plano {
+    border-right: 1px solid var(--linha);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e2);
+    padding: var(--e3);
+}
+
+.plano:first-child {
+    border-left: 1px solid var(--linha);
+}
+
+/* EN: Current plan = aqua lane on top + a solid tag | PT: Plano atual = faixa verde-água no topo + etiqueta cheia */
+.plano-atual {
+    background: var(--piso-3);
+    box-shadow: inset 0 3px 0 var(--faixa);
+}
+
+.plano-topo {
+    align-items: center;
+    display: flex;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+.plano h3 {
+    font-size: 0.95rem;
+    font-stretch: 72%;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.tag-atual {
+    background: var(--faixa);
+    color: var(--faixa-tinta);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+}
+
+.plano-preco {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: clamp(1.4rem, 1rem + 1vw, 1.9rem);
+    font-stretch: 112%;
+    font-weight: 800;
+    gap: 6px;
+    margin: 0;
+}
+
+/* EN: "/month" always on its own line, so every card lines up the same
+   PT: "/mês" sempre na própria linha, para todos os cartões alinharem igual */
+.plano-preco small {
+    color: var(--tinta-2);
+    flex-basis: 100%;
+    font-size: 0.85rem;
+    font-stretch: 100%;
+    font-weight: 500;
+}
+
+.plano-limites,
+.plano-recursos {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.plano-limites li {
+    border-bottom: 1px dotted var(--linha);
+    display: flex;
+    font-size: 0.9rem;
+    gap: var(--e1);
+    justify-content: space-between;
+    padding-bottom: 6px;
+}
+
+.plano-limites span {
+    color: var(--tinta-2);
+}
+
+.plano-recursos li {
+    align-items: center;
+    display: flex;
+    font-size: 0.88rem;
+    gap: var(--e2);
+}
+
+.recurso-linha {
+    flex: 0 0 22px;
+    height: 0;
+    position: relative;
+}
+
+.recurso-linha::before {
+    border-top: 2px solid var(--faixa-texto);
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+}
+
+.nao-tem {
+    color: var(--tinta-2);
+}
+
+.nao-tem .recurso-linha::before {
+    border-top: 2px dotted var(--tinta-2);
+}
+
+.nao-tem span:not(.recurso-linha):not(.sr-only) {
+    text-decoration: line-through;
+    text-decoration-color: var(--tinta-2);
+}
+
+.plano-suporte {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* EN: Downgrade warning: hatched left edge, text stays on a plain background
+   PT: Aviso de downgrade: borda esquerda hachurada, o texto fica em fundo liso */
+.plano-aviso {
+    border: 1px dashed var(--atencao);
+    display: grid;
+    font-size: 0.85rem;
+    gap: 4px;
+    padding: 10px 12px;
+}
+
+.plano-aviso strong {
+    color: var(--atencao);
+}
+
+.plano-aviso ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.plano-aviso small {
+    color: var(--tinta-2);
+}
+
+.plano .botao {
+    margin-top: auto;
+}
+
+.etiqueta-link {
+    text-decoration: none;
+}
+
+.etiqueta-link:hover {
+    text-decoration: underline;
+}
+
+/* ---------- EN: Platform panel | PT: Painel da plataforma ---------- */
+
+.lista-por-plano {
+    display: grid;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-por-plano li {
+    display: flex;
+    font-size: 0.9rem;
+    justify-content: space-between;
+}
+
+.busca-linha {
+    display: flex;
+    flex: 0 1 380px;
+    gap: var(--e1);
+    max-width: 100%;
+}
+
+.busca-linha input {
+    flex: 1;
+    width: 100%;
+    background: var(--campo);
+    border: 1px solid var(--piso-3);
+    color: var(--tinta);
+    font: inherit;
+    min-width: 0;
+    padding: 6px 12px;
+}
+
+.busca-linha input:focus {
+    border-color: var(--faixa);
+    outline: 2px solid var(--faixa);
+    outline-offset: 0;
+}
+
+.lista-plataforma {
+    display: grid;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.plataforma-item {
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e2);
+    padding: var(--e3) 0;
+}
+
+.lista-plataforma .plataforma-item:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.plataforma-cabeca {
+    align-items: start;
+    display: flex;
+    gap: var(--e2);
+}
+
+.plataforma-plano {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.plataforma-uso {
+    display: grid;
+    gap: var(--e1);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+}
+
+.plataforma-uso div {
+    border-left: 2px solid var(--linha);
+    padding-left: 10px;
+}
+
+.plataforma-uso dt {
+    color: var(--tinta-2);
+    font-size: 0.8rem;
+}
+
+.plataforma-uso dd {
+    font-weight: 700;
+    margin: 0;
+}
+
+/* EN: Over the limit after a downgrade = hatched base line + warning color
+   PT: Acima do limite depois de um downgrade = linha de base hachurada + cor de atenção */
+.uso-acima {
+    background-image: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 6px);
+    background-position: bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 3px;
+    padding-bottom: 6px;
+}
+
+.uso-acima dd {
+    color: var(--atencao);
+}
+
+.plataforma-form {
+    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+}
+
+.plataforma-form .campo {
+    margin: 0;
+    min-width: 180px;
+}
+
+@media (max-width: 1100px) {
+    .planos-grade {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plano:nth-child(3) {
+        border-left: 1px solid var(--linha);
+    }
+
+    .plano:nth-child(n + 3) {
+        border-top: 1px solid var(--linha);
+    }
+}
+
+@media (max-width: 640px) {
+    .planos-grade {
+        grid-template-columns: 1fr;
+    }
+
+    .plano {
+        border-left: 1px solid var(--linha);
+    }
+
+    .plano + .plano {
+        border-top: 1px solid var(--linha);
+    }
+
+    .plataforma-uso {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plataforma-cabeca {
+        flex-direction: column;
+    }
+
+    .plataforma-plano {
+        justify-content: flex-start;
+    }
+}
+
+/* ---------- EN: Quote draft notice and pipeline drag and drop | PT: Aviso de rascunho e arrastar no funil ---------- */
+
+/* EN: Unsaved draft found = dashed border, the app's "pending" line form
+   PT: Rascunho não salvo encontrado = borda tracejada, a forma de linha "pendente" do app */
+.aviso-rascunho {
+    align-items: center;
+    border: 1px dashed var(--faixa);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    justify-content: space-between;
+    margin-bottom: var(--e3);
+    padding: var(--e2);
+}
+
+.cartao[draggable="true"] {
+    cursor: grab;
+}
+
+.cartao.arrastando {
+    cursor: grabbing;
+    opacity: 0.45;
+}
+
+/* EN: Drop target: dashed aqua outline inside the column | PT: Alvo de soltar: contorno tracejado verde-água dentro da coluna */
+.cartoes.alvo-soltar {
+    outline: 2px dashed var(--faixa);
+    outline-offset: -4px;
+}
+
+.dica-arrastar {
+    margin-bottom: var(--e2);
+}
+
+/* EN: The drag hint only where a mouse exists | PT: A dica de arrastar só onde existe mouse */
+@media (hover: none) {
+    .dica-arrastar {
+        display: none;
+    }
+}
+
+/* ---------- EN: Settings, onboarding step, password reset | PT: Configurações, passo do onboarding, recuperar senha ---------- */
+
+.passo-onboarding {
+    color: var(--faixa-texto);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 var(--e1);
+}
+
+.link-discreto {
+    color: var(--tinta-2);
+    font-size: 0.88rem;
+    justify-self: end;
+    margin-top: 6px;
+}
+
+.link-discreto:hover {
+    color: var(--tinta);
+}
+
+.conta-config {
+    align-items: center;
+    color: var(--tinta-2);
+    display: inline-flex;
+    font-size: 0.85rem;
+    gap: 6px;
+    margin-top: 6px;
+    min-height: 32px;
+}
+
+.conta-config:hover {
+    color: var(--tinta);
+}
+
+.logo-atual {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    margin: 6px 0;
+}
+
+/* EN: the logo always sits on paper white, like on the PDF | PT: a logo sempre fica sobre branco papel, como no PDF */
+.logo-atual img,
+.logo-distribuidora {
+    background: #ffffff;
+    border: 1px solid var(--linha);
+    max-height: 56px;
+    max-width: 180px;
+    object-fit: contain;
+    padding: 6px;
+}
+
+.logo-distribuidora {
+    display: block;
+    margin-bottom: var(--e1);
+}
+
+.ficha dd .tag-plano {
+    margin-left: 8px;
+}
+
+.opcao-inline {
+    align-items: center;
+    display: inline-flex;
+    font-size: 0.9rem;
+    gap: 8px;
+}
+
+input[type="file"] {
+    color: var(--tinta-2);
+    font: inherit;
+    font-size: 0.9rem;
+}
+
+/* EN: Onboarding side panel: a slice of the quote sheet | PT: Painel lateral do onboarding: um pedaço da folha do orçamento */
+.folha-amostra {
+    background: #ffffff;
+    color: #17252d;
+    display: grid;
+    gap: 6px;
+    margin-top: var(--e3);
+    max-width: 320px;
+    padding: 22px 20px 18px;
+    position: relative;
+}
+
+.folha-amostra-faixa {
+    background: #35d0ba;
+    height: 4px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.folha-amostra span {
+    color: #4b5d64;
+    font-size: 0.85rem;
+}
+
+.folha-amostra-linha {
+    border-top: 2px solid #17252d;
+    margin: 6px 0 4px;
+}
+
+/* ---------- EN: Dashboard period report | PT: Relatório do período no painel ---------- */
+
+.relatorio {
+    margin-top: var(--e3);
+}
+
+/* EN: Period switch: the chosen period is a solid aqua lane under the label
+   PT: Troca de período: o período escolhido ganha uma faixa verde-água cheia embaixo */
+.periodos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.periodo {
+    border-bottom: 2px solid transparent;
+    color: var(--tinta-2);
+    font-size: 0.9rem;
+    font-weight: 650;
+    min-height: 40px;
+    padding: 10px 12px 8px;
+    text-decoration: none;
+}
+
+.periodo:hover {
+    color: var(--tinta);
+}
+
+.periodo[aria-current="true"] {
+    border-bottom-color: var(--faixa);
+    color: var(--tinta);
+}
+
+.resumo-periodo {
+    border-bottom: 1px solid var(--linha);
+    border-top: 1px solid var(--linha);
+    display: grid;
+    gap: var(--e2);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: var(--e2) 0 var(--e3);
+    padding: var(--e2) 0;
+}
+
+.resumo-periodo div {
+    display: grid;
+    gap: 4px;
+}
+
+.resumo-periodo dt {
+    color: var(--tinta-2);
+    font-size: 0.85rem;
+}
+
+.resumo-periodo dd {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+}
+
+.resumo-periodo b {
+    font-size: 1.35rem;
+    font-stretch: 110%;
+    font-weight: 780;
+}
+
+.resumo-periodo small {
+    color: var(--tinta-2);
+    font-size: 0.8rem;
+}
+
+.resumo-comissao b {
+    color: var(--faixa-texto);
+}
+
+.relatorio-grade {
+    display: grid;
+    gap: var(--e3) var(--e4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.relatorio-largo {
+    grid-column: 1 / -1;
+}
+
+.relatorio-bloco {
+    display: grid;
+    gap: var(--e1);
+    align-content: start;
+}
+
+.titulo-bloco {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.tabela-rolagem {
+    overflow-x: auto;
+}
+
+.tabela-ranking .num {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* EN: the seller's name is a row header for screen readers, but looks like body text
+   PT: o nome do vendedor é cabeçalho de linha para leitores de tela, mas parece texto normal */
+.tabela-ranking th[scope="row"] {
+    color: var(--tinta);
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: normal;
+    text-align: left;
+    text-transform: none;
+}
+
+.barra-valor {
+    display: grid;
+    gap: 4px;
+    min-width: 140px;
+}
+
+/* EN: Bar = a floor lane; --parte is 0..1 of the best value, drawn with scaleX
+   PT: Barra = uma faixa de piso; --parte é 0..1 do melhor valor, desenhada com scaleX */
+.barra {
+    background: var(--piso-3);
+    display: block;
+    height: 6px;
+    position: relative;
+}
+
+.barra::after {
+    background: var(--faixa);
+    content: "";
+    inset: 0;
+    position: absolute;
+    transform: scaleX(var(--parte));
+    transform-origin: left;
+}
+
+.barra-perda::after {
+    background: repeating-linear-gradient(-45deg, var(--atencao) 0 2px, transparent 2px 5px);
+}
+
+.lista-barras {
+    display: grid;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-barras li {
+    display: grid;
+    gap: 5px;
+}
+
+.lista-barras-topo {
+    display: flex;
+    gap: var(--e1);
+    justify-content: space-between;
+}
+
+.lista-barras small {
+    color: var(--tinta-2);
+    font-size: 0.82rem;
+}
+
+.comissao-form {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+}
+
+/* EN: the save button matches the 40 px short field beside it | PT: o botão salvar acompanha o campo curto de 40 px ao lado */
+.botao-mini-texto {
+    height: 40px;
+    padding: 0 12px;
+}
+
+@media (max-width: 860px) {
+    .relatorio-grade {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- EN: Terms and privacy pages | PT: Páginas de termos e privacidade ---------- */
+
+.pagina-legal {
+    background: var(--piso);
+}
+
+.legal-topo {
+    align-items: center;
+    border-bottom: 1px solid var(--linha);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+    justify-content: space-between;
+    padding: var(--e2) max(16px, 4vw);
+}
+
+.legal-links {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e2);
+}
+
+.legal-links a {
+    color: var(--tinta-2);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.legal-links a[aria-current="page"] {
+    color: var(--tinta);
+    font-weight: 700;
+}
+
+.legal {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: var(--e5) 16px var(--e6, 96px);
+    position: relative;
+}
+
+.legal-faixa {
+    background: var(--faixa);
+    display: block;
+    height: 4px;
+    margin-bottom: var(--e3);
+    width: 64px;
+}
+
+.legal-data {
+    color: var(--tinta-2);
+    font-size: 0.88rem;
+    margin-top: var(--e1);
+}
+
+.legal-intro {
+    font-size: 1.1rem;
+    margin: var(--e3) 0;
+}
+
+.legal-secoes {
+    display: grid;
+    gap: var(--e3);
+    margin: 0 0 var(--e4);
+    padding-left: 1.4em;
+}
+
+.legal-secoes h2 {
+    font-size: 1.1rem;
+    margin: 0 0 6px;
+}
+
+.legal-secoes p {
+    color: var(--tinta-2);
+    margin: 0;
+}
+
+.legal-contato {
+    border-top: 1px solid var(--linha);
+    padding-top: var(--e2);
+}
+
+.aceite-termos {
+    margin-top: var(--e1);
+    text-align: center;
+}
+
+/* ---------- EN: Portal empty state | PT: Estado vazio do portal ---------- */
+
+.vazio {
+    justify-items: start;
+    max-width: 720px;
+    position: relative;
+}
+
+.vazio-faixa {
+    border-top: 3px dashed var(--tinta-2);
+    width: 120px;
+}
+
+.vazio p {
+    color: var(--tinta-2);
+    max-width: 56ch;
+}
+
+/* ---------- EN: Error page | PT: Página de erro ---------- */
+
+.erro-pagina {
+    display: grid;
+    gap: var(--e2);
+    justify-items: start;
+    padding-top: var(--e5);
+}
+
+.erro-codigo {
+    color: var(--faixa-texto);
+    font-size: clamp(4rem, 12vw, 8rem);
+    font-stretch: 125%;
+    font-weight: 820;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+}
+
+/* ---------- EN: Access screens (split) | PT: Telas de acesso (divididas) ---------- */
+
+.acesso-grade {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    min-height: 100vh;
+}
+
+.acesso-lado-form {
+    display: flex;
+    flex-direction: column;
+    padding: var(--e3) var(--e5) var(--e5);
+}
+
+.acesso-topo {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--e5);
+}
+
+.acesso-controles {
+    display: flex;
+    gap: var(--e1);
+}
+
+.acesso-form {
+    display: grid;
+    gap: var(--e3);
+    margin: auto 0;
+    max-width: 480px;
+    width: 100%;
+}
+
+.acesso-rodape {
+    color: var(--tinta-2);
+    font-size: 0.92rem;
+}
+
+/* EN: The petroleum plate stays dark in both themes: it is the brand plate
+   PT: A chapa petróleo continua escura nos dois temas: é a chapa da marca */
+.acesso-painel {
+    --tinta: #E9F1EF;
+    --tinta-2: #A6C2C1;
+    --linha: rgba(233, 241, 239, 0.16);
+    --hachura: rgba(53, 208, 186, 0.32);
+    --hachura-forte: rgba(242, 196, 206, 0.34);
+    background: #103B46;
+    color: var(--tinta);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e5);
+    justify-content: center;
+    overflow: hidden;
+    padding: var(--e6) var(--e5);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.acesso-frase {
+    font-size: clamp(2rem, 3.4vw, 3.4rem);
+    font-stretch: 122%;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    max-width: 12ch;
+    overflow-wrap: anywhere;
+}
+
+.regua-painel {
+    width: 100%;
+}
+
+.regua-painel .regua-legenda {
+    height: 3.2em;
+}
+
+.regua-painel .legenda-gerente {
+    top: 1.5em;
+}
+
+.painel-margem {
+    color: var(--tinta-2);
+}
+
+.painel-margem b {
+    color: var(--tinta);
+}
+
+/* EN: Rack tags on the plate | PT: Etiquetas de prateleira na chapa */
+.etiqueta-painel,
+.etiqueta-previa {
+    align-self: start;
+    background: #E9F1EF;
+    color: #0B2A33;
+    display: inline-flex;
+    font-stretch: 75%;
+    font-weight: 740;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.etiqueta-painel {
+    padding: 6px 12px 4px;
+}
+
+.etiqueta-previa {
+    max-width: 100%;
+}
+
+.etiqueta-previa-codigo {
+    background: #35D0BA;
+    padding: 8px 12px 6px;
+}
+
+.etiqueta-previa-nome {
+    overflow: hidden;
+    padding: 8px 14px 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- EN: Tablet | PT: Tablet ---------- */
+
+@media (max-width: 1100px) {
+    .medidores {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grade-equipe {
+        grid-template-columns: 1fr;
+    }
+
+    .acesso-grade {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    }
+
+    .acesso-lado-form {
+        padding: var(--e3) var(--e4) var(--e5);
+    }
+}
+
+/* ---------- EN: Phone: top bar + bottom bar | PT: Celular: barra no topo + barra embaixo ---------- */
+
+@media (max-width: 860px) {
+    body.app {
+        display: block;
+        padding-bottom: 76px;
+    }
+
+    .app-topo-movel,
+    .app-topo-simples {
+        align-items: center;
+        background: var(--piso);
+        border-bottom: 1px solid var(--linha);
+        display: flex;
+        justify-content: space-between;
+        padding: 10px var(--e2);
+        position: sticky;
+        top: 0;
+        z-index: 40;
+    }
+
+    .app-topo-movel .menu-painel {
+        gap: var(--e2);
+        padding: var(--e2);
+        width: min(320px, calc(100vw - 32px));
+    }
+
+    /* EN: The rail becomes the bottom bar, within thumb reach | PT: O trilho vira a barra de baixo, ao alcance do polegar */
+    .app-trilho {
+        background: var(--piso);
+        border-right: 0;
+        border-top: 1px solid var(--linha);
+        bottom: 0;
+        flex-direction: row;
+        gap: 0;
+        height: auto;
+        left: 0;
+        padding: 6px var(--e1) calc(6px + env(safe-area-inset-bottom));
+        position: fixed;
+        right: 0;
+        top: auto;
+        z-index: 40;
+    }
+
+    .app-trilho::before,
+    .app-trilho .app-marca,
+    .app-conta {
+        display: none;
+    }
+
+    .app-nav {
+        display: flex;
+        flex: 1;
+        justify-content: space-around;
+    }
+
+    .app-nav li {
+        flex: 1;
+    }
+
+    /* EN: up to 6 items must fit 360px | PT: até 6 itens precisam caber em 360px */
+    .app-nav-item {
+        flex-direction: column;
+        font-size: 0.62rem;
+        gap: 4px;
+        letter-spacing: 0.04em;
+        padding: 8px 2px;
+        text-align: center;
+    }
+
+    .app-nav-item[aria-current="page"] {
+        background: none;
+    }
+
+    .app-nav-ponteiro {
+        left: calc(50% - 12px);
+        top: -7px;
+    }
+
+    [aria-current="page"] .app-nav-ponteiro {
+        width: 24px;
+    }
+
+    .app-principal {
+        padding: var(--e4) var(--e2) var(--e5);
+    }
+
+    .chapa {
+        padding: var(--e3);
+    }
+
+    .medidores {
+        gap: var(--e3);
+    }
+
+    .acesso-grade {
+        display: block;
+    }
+
+    .acesso-painel {
+        display: none;
+    }
+
+    .acesso-lado-form {
+        min-height: 100vh;
+        padding: var(--e2) var(--e3) var(--e5);
+    }
+
+    .acesso-topo {
+        margin-bottom: var(--e4);
+    }
+
+    .campos-dupla {
+        grid-template-columns: 1fr;
+    }
+
+    /* EN: Team table stacks into rows | PT: A tabela da equipe vira linhas empilhadas */
+    .tabela-membros thead {
+        display: none;
+    }
+
+    .tabela-membros tr {
+        display: grid;
+        gap: 6px;
+        grid-template-columns: 1fr auto;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--linha);
+    }
+
+    .tabela-membros td {
+        border: 0;
+        padding: 0;
+    }
+
+    .tabela-membros td:nth-child(2) {
+        grid-row: 2;
+    }
+
+    .tabela-membros .coluna-acao {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 480px) {
+    .medidores {
+        grid-template-columns: 1fr;
+    }
+
+    .tipos-conta {
+        grid-template-columns: 1fr;
+    }
+}
